@@ -1,0 +1,14 @@
+Yannic:
+- additional features (urgent)
+- high/low and volume as additional features
+- pre-filtering of input data
+- implementation of NO normalisation
+- data dependant normalisation
+
+Florian:
+- Time Distributed (urgent)
+- relational networks
+- save plots and archive models and true values/predictions
+- keep hyperband up-to-date 
+
+Lukas:

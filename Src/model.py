@@ -50,21 +50,21 @@ def build_model(params):
   #print params['neuronsperlayer']
   if params['cnn'] == 'on':
     
-    model.add(Conv1D(input_shape = (None, int(params['inputdim'])), filters=200, kernel_size=7, padding='causal', activation='relu'))
-    #model.add(Conv1D(filters=200, kernel_size=7, padding='causal', activation='relu'))
+    model.add(Conv1D(input_shape = (None, int(params['inputdim'])), filters=200, kernel_size=5, padding='causal', activation='relu'))
+    model.add(Conv1D(filters=200, kernel_size=5, padding='causal', activation='relu'))
     if str(params['batchnorm']) == 'on':
       model.add(BatchNormalization())
     model.add(MaxPooling1D(pool_size=2))
-    model.add(Conv1D(filters=100, kernel_size=5, padding='causal', activation='relu'))
-    #model.add(Conv1D(filters=100, kernel_size=5, padding='causal', activation='relu'))
+    model.add(Conv1D(filters=100, kernel_size=3, padding='causal', activation='relu'))
+    model.add(Conv1D(filters=100, kernel_size=3, padding='causal', activation='relu'))
     if str(params['batchnorm']) == 'on':
       model.add(BatchNormalization())
     model.add(MaxPooling1D(pool_size=2))
-    model.add(Conv1D(filters=50, kernel_size=3, padding='causal', activation='relu'))
+    #model.add(Conv1D(filters=20, kernel_size=3, padding='causal', activation='relu'))
     #model.add(Conv1D(filters=50, kernel_size=3, padding='causal', activation='relu'))
-    if str(params['batchnorm']) == 'on':
-      model.add(BatchNormalization())
-    model.add(MaxPooling1D(pool_size=2))
+    #if str(params['batchnorm']) == 'on':
+      #model.add(BatchNormalization())
+    #model.add(MaxPooling1D(pool_size=2))
   
   # first layer is special, gets build by hand
   if isinstance(params['neuronsperlayer'], list):
@@ -126,13 +126,15 @@ def build_model(params):
       int(params['neuronsperlayer'][-1]),
       activation = str(params['activationperlayer'][-1]),
       return_sequences=False,
-      recurrent_activation = str(params['recurrentactivation'][-1])
+      recurrent_activation = str(params['recurrentactivation'][-1]),
+      dropout=float(params['dropout'][i]),
+      recurrent_dropout=float(params['dropout'][i])
       )
       )
     )
     if str(params['batchnorm']) == 'on':
       model.add(BatchNormalization())
-    model.add(Dropout(float(params['dropout'][-1])))
+    #model.add(Dropout(float(params['dropout'][-1])))
   
   else:
     print params['neuronsperlayer']
@@ -141,18 +143,21 @@ def build_model(params):
     print str(params['recurrentactivation'])
     if int(params['verbosity']) < 2:
       print 'layer 0: ',params['neuronsperlayer']
-    model.add(LSTM(
+    model.add(Bidirectional(LSTM(
       int(params['neuronsperlayer']),
       input_shape = (None, int(params['inputdim'])),
       activation = str(params['activationperlayer']),
       return_sequences=False,
-      recurrent_activation = str(params['recurrentactivation'])
+      recurrent_activation = str(params['recurrentactivation']),
+      dropout=float(params['dropout'][i]),
+      recurrent_dropout=float(params['dropout'][i])
       )
+    )
     )
     if str(params['batchnorm']) == 'on':
       model.add(BatchNormalization())
     
-    model.add(Dropout(float(params['dropout'][0])))
+    #model.add(Dropout(float(params['dropout'][0])))
   
   #last layer is dense
   if int(params['verbosity']) < 2:
