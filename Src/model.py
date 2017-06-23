@@ -120,12 +120,16 @@ def build_model(params):
       #model.add(Dropout(float(params['dropout'][i])))
     
     #last LSTM layer is special because return_sequences=False
+    if str(params['timedistributed']) == 'on':
+      returnSequences = True
+    else:
+      returnSequences = False
     if int(params['verbosity']) < 2:
       print 'last LSTM layer: ',params['neuronsperlayer'][-1]
     model.add(Bidirectional(LSTM(
       int(params['neuronsperlayer'][-1]),
       activation = str(params['activationperlayer'][-1]),
-      return_sequences=True,
+      return_sequences=returnSequences,
       recurrent_activation = str(params['recurrentactivation'][-1]),
       dropout=float(params['dropout'][i]),
       recurrent_dropout=float(params['dropout'][i])
@@ -148,7 +152,7 @@ def build_model(params):
       int(params['neuronsperlayer']),
       input_shape = (None, int(params['inputdim'])),
       activation = str(params['activationperlayer']),
-      return_sequences=True,
+      return_sequences=returnSequences,
       recurrent_activation = str(params['recurrentactivation']),
       dropout=float(params['dropout'][i]),
       recurrent_dropout=float(params['dropout'][i])
@@ -156,24 +160,33 @@ def build_model(params):
     )
     if str(params['batchnorm']) == 'on':
       model.add(BatchNormalization())
-    
+
     #model.add(Dropout(float(params['dropout'][0])))
-  
+
   #last layer is dense
   if int(params['verbosity']) < 2:
-    print 'last layer (dense): ',params['outputdim']    
-  model.add(TimeDistributed(Dense(
-      #units=int(params['outputdim']),
-      units=1,
-      activation = 'linear'
+    print 'last layer (dense): ',params['outputdim']
+  if str(params['timedistributed']) == 'on':
+    model.add(TimeDistributed(Dense(
+        #units=int(params['outputdim']),
+        #testing parameter
+        units=8,
+        activation = 'linear'
+        )
       )
-  )
-  )
-  
+    )
+  else:
+    model.add(Dense(
+        units=int(params['outputdim']),
+        activation = 'linear'
+      )
+    )
+
+
   if int(params['verbosity']) < 2:
     print '> Build time : ', time.time() - start
     model.summary()
-  
+
   start = time.time()
   if params['optimiser'] == 'adam':
       opt = Adam(lr = float(params['learningrate']),

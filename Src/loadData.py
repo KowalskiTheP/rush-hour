@@ -165,9 +165,23 @@ def get_windows_andShift_seq_hourly(x,winLength,look_back,outDim,y_column):
   #Old: for i in xrange(0,len(x)-(winLength+outDim),2): 
   for i in xrange(0,len(x)-(winLength+outDim),1):
     x_train.append(x[i:i+winLength])
-    #y_train.append(x[(i+winLength+look_back-1):(i+winLength+look_back+outDim-1),y_column])
     y_train.append(x[(i+winLength+look_back-1):(i+winLength+look_back+outDim-1),y_column])
+
   return np.array(x_train), np.reshape(np.array(y_train),(len(y_train),outDim))
+
+###############################################
+
+def get_windows_andShift_seq_hourly_timeDist(x,winLength,look_back,outDim,y_column):
+  x_train, y_train = [], []
+
+  #Porbably important bugfix
+  #Old: for i in xrange(0,len(x)-(winLength+outDim),2): 
+  for i in xrange(0,len(x)-(2*winLength+outDim),1):
+    x_train.append(x[i:i+winLength])
+    #y_train.append(x[(i+winLength+look_back-1):(i+winLength+look_back+outDim-1),y_column])
+    y_train.append(x[(i+winLength+look_back-1):(i+winLength+winLength-1+look_back+outDim-1),y_column])
+
+  return np.array(x_train), np.reshape(np.array(y_train),(len(y_train),winLength,outDim))
 
 ##############################################
 
@@ -229,6 +243,81 @@ def make_windowed_data_withSplit(dataframe, config):
   x_winTrain = np.array(x_tmp)
   y_winTrain = np.array(y_tmp)
   
+  #x_tmp, y_tmp = [],[]
+  #for i in range(len(x_winTest)):
+    #if x_winTest[i,-1,1] != 18:
+      #x_tmp.append(x_winTest[i])
+      #y_tmp.append(y_winTest[i])
+  #x_winTest = np.array(x_tmp)
+  #y_winTest = np.array(y_tmp)
+  
+  #print 'x_winTest[0]:\n', x_winTest[1]
+  
+  if config['normalise'] == '3':
+    x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm,trainRef,testRef = [],[],[],[],[],[]
+    for i in range(len(y_winTrain)):
+      x_winTrain_norm.append(normalise_data_refValue(x_winTrain[i,-1],x_winTrain[i]))
+      y_winTrain_norm.append(normalise_data_refValue(x_winTrain[i,-1,y_column],y_winTrain[i]))
+      trainRef.append(x_winTrain[i,-1])
+    for i in range(len(y_winTest)):
+      x_winTest_norm.append( normalise_data_refValue(x_winTest[i,-1],x_winTest[i]))
+      y_winTest_norm.append( normalise_data_refValue(x_winTest[i,-1,y_column],y_winTest[i]))
+      testRef.append(x_winTest[i,-1])
+    
+  if config['normalise'] == '4':
+    trainMin,trainMax,x_winTrain,y_winTrain = minMaxNorm(x_winTrain,y_winTrain,y_column,yNorm=True)
+    testMin ,testMax ,x_winTest ,y_winTest  = minMaxNorm(x_winTest ,y_winTest ,y_column,yNorm=True)
+    x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm = [],[],[],[]
+    for i in range(len(y_winTrain)):
+      x_winTrain_norm.append( normalise_data_refValue(trainMax[i]         ,x_winTrain[i]) )
+      y_winTrain_norm.append( normalise_data_refValue(trainMax[i,y_column],y_winTrain[i]) )
+    for j in range(len(y_winTest)):
+      x_winTest_norm.append(  normalise_data_refValue(testMax[j]          ,x_winTest[j])  )
+      y_winTest_norm.append(  normalise_data_refValue(testMax[j,y_column] ,y_winTest[j])  )
+      
+  
+  x_winTrain_norm = np.reshape(np.array(x_winTrain_norm),(len(x_winTrain_norm),winL,xDim ))
+  y_winTrain_norm = np.reshape(np.array(y_winTrain_norm),(len(y_winTrain_norm),yDim ))
+  x_winTest_norm =  np.reshape(np.array(x_winTest_norm) ,(len(x_winTest_norm) ,winL,xDim ))
+  y_winTest_norm =  np.reshape(np.array(y_winTest_norm) ,(len(y_winTest_norm) ,yDim ))
+
+  if config['normalise'] == '3':
+    return x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm, np.array(trainRef), np.array(testRef)
+  
+  if config['normalise'] == '4':
+    return x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm, np.array(trainMax),np.array(trainMin),np.array(testMax),np.array(testMin)  
+  
+##############################################
+
+def make_windowed_data_withSplit_timeDist(dataframe, config):
+
+  refValue = float(config['refvalue'])
+  winL = int(config['winlength'])
+  lookB = int(config['look_back'])
+  xDim = len(config['columns'])
+  yDim = int(config['outputdim'])
+  y_column = int(config['y_column'])
+  dataSet_Full = getDataSet_noSplit(dataframe, config['columns'])
+  
+  dataSetTrain, dataSetTest = split_data(dataSet_Full, float(config['traintestsplit']))
+
+  x_winTrain, y_winTrain = get_windows_andShift_seq_hourly_timeDist(dataSetTrain, winL, lookB,yDim,y_column)
+  
+  x_winTest, y_winTest = get_windows_andShift_seq_hourly_timeDist(dataSetTest, winL, lookB,yDim,y_column)
+  
+  print np.shape(y_winTest)
+  print np.shape(x_winTest)
+
+ 
+  # Deleting evening to morning predictions
+  x_tmp, y_tmp = [],[]
+  for i in range(len(x_winTrain)):
+    if x_winTrain[i,-1,1] != 18:
+      x_tmp.append(x_winTrain[i])
+      y_tmp.append(y_winTrain[i])
+  x_winTrain = np.array(x_tmp)
+  y_winTrain = np.array(y_tmp)
+
   #x_tmp, y_tmp = [],[]
   #for i in range(len(x_winTest)):
     #if x_winTest[i,-1,1] != 18:
