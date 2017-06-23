@@ -160,10 +160,12 @@ def get_windows_andShift_seq(x,winLength,look_back,outDim,y_column):
 
 def get_windows_andShift_seq_hourly(x,winLength,look_back,outDim,y_column):
   x_train, y_train = [], []
+
   #Porbably important bugfix
   #Old: for i in xrange(0,len(x)-(winLength+outDim),2): 
   for i in xrange(0,len(x)-(winLength+outDim),1):
     x_train.append(x[i:i+winLength])
+    #y_train.append(x[(i+winLength+look_back-1):(i+winLength+look_back+outDim-1),y_column])
     y_train.append(x[(i+winLength+look_back-1):(i+winLength+look_back+outDim-1),y_column])
   return np.array(x_train), np.reshape(np.array(y_train),(len(y_train),outDim))
 
@@ -215,6 +217,8 @@ def make_windowed_data_withSplit(dataframe, config):
   x_winTrain, y_winTrain = get_windows_andShift_seq_hourly(dataSetTrain, winL, lookB,yDim,y_column)
   
   x_winTest, y_winTest = get_windows_andShift_seq_hourly(dataSetTest, winL, lookB,yDim,y_column)
+  
+
  
   # Deleting evening to morning predictions
   x_tmp, y_tmp = [],[]
@@ -233,7 +237,7 @@ def make_windowed_data_withSplit(dataframe, config):
   #x_winTest = np.array(x_tmp)
   #y_winTest = np.array(y_tmp)
   
-  print 'x_winTest[0]:\n', x_winTest[1]
+  #print 'x_winTest[0]:\n', x_winTest[1]
   
   if config['normalise'] == '3':
     x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm,trainRef,testRef = [],[],[],[],[],[]
@@ -324,8 +328,8 @@ def make_windowed_data_noSplit(dataframe, config):
   x_winTest_norm =  np.reshape(np.array(x_winTest_norm) ,(len(x_winTest_norm) ,winL,xDim ))
   y_winTest_norm =  np.reshape(np.array(y_winTest_norm) ,(len(y_winTest_norm) ,yDim ))
   
-  print x_winTrain_norm[0]
-  print x_winTest_norm[0]
+  #print x_winTrain_norm[0]
+  #print x_winTest_norm[0]
   
   if config['normalise'] == '3':
     return x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm, np.array(trainRef), np.array(testRef)

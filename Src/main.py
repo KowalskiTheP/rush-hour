@@ -36,7 +36,7 @@ if config['windoweddata'] == 'on':
     if config['normalise'] == '3':   
       x_winTrain, y_winTrain, x_winTest, y_winTest,trainRef, testRef = loadData.make_windowed_data_withSplit(dataframe,config)
     if config['normalise'] == '4':
-      x_winTrain, y_winTrain, x_winTest, y_winTest,trainMax,trainMin,testMax,testMin = loadData.make_windowed_data_withSplit(dataframe,config)    
+      x_winTrain, y_winTrain, x_winTest, y_winTest,trainMax,trainMin,testMax,testMin = loadData.make_windowed_data_withSplit(dataframe,config)
 
   if config['split'] == 'off':
     if config['normalise'] == '3':   
