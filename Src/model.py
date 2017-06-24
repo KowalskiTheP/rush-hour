@@ -131,8 +131,8 @@ def build_model(params):
       activation = str(params['activationperlayer'][-1]),
       return_sequences=returnSequences,
       recurrent_activation = str(params['recurrentactivation'][-1]),
-      dropout=float(params['dropout'][i]),
-      recurrent_dropout=float(params['dropout'][i])
+      dropout=float(params['dropout'][-1]),
+      recurrent_dropout=float(params['dropout'][-1])
       ),
     merge_mode='ave'
       )
@@ -170,7 +170,7 @@ def build_model(params):
     model.add(TimeDistributed(Dense(
         #units=int(params['outputdim']),
         #testing parameter
-        units=8,
+        units=1,
         activation = 'linear'
         )
       )

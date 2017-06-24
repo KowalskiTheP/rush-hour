@@ -46,18 +46,28 @@ def addInfo(dataframe, orderedArray, finalWidth, columns2Add):
   return dax_newArray
 
 
-#df_dow = pd.read_csv('../Data/dj-IND_110101_170619.csv', decimal='.' ,sep=',', header=0)
+df_dow = pd.read_csv('../Data/dj-IND_110101_170619.csv', decimal='.' ,sep=',', header=0)
+print 'fisrt:\n',df_dow
 
-#for i in range(len(df_dow)):
-  #tmpString = list(str(df_dow.loc[i,'<DATE>']))
-  #df_dow.loc[i,'<DATE>'] = ''.join(tmpString[0:4])+'.'+''.join(tmpString[4:6])+'.' +''.join(tmpString[6:8])
+for i in range(len(df_dow)):
+  tmpString = list(str(df_dow.loc[i,'<DATE>']))
+  df_dow.loc[i,'<DATE>'] = ''.join(tmpString[0:4])+'.'+''.join(tmpString[4:6])+'.' +''.join(tmpString[6:8])
+
+df_dow['<TIME>'] = df_dow['<TIME>'].multiply( 1./10000. )
+for i in range(len(df_dow)):
+  tmpString = str(df_dow.loc[i,'<TIME>']).split('.')[0]
+  df_dow.loc[i,'<TIME>'] = tmpString+':00:00'
   
-#df_dow.drop(['<TICKER>','<PER>'], axis=1,inplace=True)
-#df_dow = convertDate(df_dow, '<DATE>', '%Y.%m.%d', '2010.01.01')
-#df_dow['<TIME>'] = df_dow['<TIME>'].multiply( 1./10000. )
+df_dow['D+T'] = pd.to_datetime(df_dow['<DATE>']+' '+df_dow['<TIME>']) - pd.DateOffset(hours=9)
 
+df_dow['<TIME>'] = df_dow['D+T'].dt.hour
+df_dow['<DATE>'] = df_dow['D+T'].dt.date
 
-#df_dow.to_csv('../Data/dj-preStage.csv',index=False)
+  
+df_dow.drop(['<TICKER>','<PER>'], axis=1,inplace=True)
+df_dow = convertDate(df_dow, '<DATE>', '%Y-%m-%d', '2010-01-01')
+
+df_dow.to_csv('../Data/dj-preStage.csv',index=False)
 
 
 df_dow = pd.read_csv('../Data/dj-preStage.csv', decimal='.' ,sep=',', header=0)
@@ -88,9 +98,11 @@ df_dow = pd.read_csv('../Data/dj-preStage.csv', decimal='.' ,sep=',', header=0)
   
 #print sieben ,acht ,neun ,zen ,elf ,zw ,dreizen 
 
-hourList = [17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 0.0, 1.0]
-df_dow = df_dow[df_dow['<TIME>'].isin(hourList)]
-print df_dow[['<TIME>','<OPEN>','<CLOSE>']]
+#============= May be important
+#hourList = [17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 0.0, 1.0]
+#df_dow = df_dow[df_dow['<TIME>'].isin(hourList)]
+#print df_dow[['<TIME>','<OPEN>','<CLOSE>']]
+#==============
 
 #df_nikkei = convertDate(df_nikkei, 'Date', '%Y-%m-%d', '1985-01-01')
 #df_dowJones = convertDate(df_dowJones, 'Date', '%Y-%m-%d', '1985-01-01')
@@ -100,20 +112,28 @@ print df_dow[['<TIME>','<OPEN>','<CLOSE>']]
 
 df_dow = df_dow.loc[:,['days','<TIME>','<OPEN>','<CLOSE>']]
 
-print df_dow
 df_dow = df_dow.reset_index(drop=True)
-print df_dow
 
-temp_tmp = []
-for i in range(1,len(df_dow)):
-  if int(df_dow.loc[i,'<TIME>']) == 17.0 or df_dow.loc[i,'<TIME>'] == 18.0:
-    temp_tmp.append([df_dow.loc[i,'days'],df_dow.loc[i,'<TIME>']-1.,df_dow.loc[i,'<OPEN>']])
-    temp_tmp.append([df_dow.loc[i,'days'],df_dow.loc[i,'<TIME>']   ,df_dow.loc[i,'<CLOSE>']])
-  else:
-    temp_tmp.append([df_dow.loc[i,'days'],df_dow.loc[i,'<TIME>'],df_dow.loc[i,'<CLOSE>']])
+
+
+#==================================
+# The following code is most likly not needed for the russian data (for the polish it is!).
+
+#temp_tmp = []
+#for i in range(1,len(df_dow)):
+  #if df_dow.loc[i,'<TIME>']<df_dow.loc[i-1,'<TIME>'] and df_dow.loc[i,'days']!=df_dow.loc[i-1,'days']:
+    #temp_tmp.append([df_dow.loc[i,'days'],df_dow.loc[i,'<TIME>']-1.,df_dow.loc[i,'<OPEN>']])
+    #temp_tmp.append([df_dow.loc[i,'days'],df_dow.loc[i,'<TIME>']   ,df_dow.loc[i,'<CLOSE>']])
+  #else:
+    #temp_tmp.append([df_dow.loc[i,'days'],df_dow.loc[i,'<TIME>']   ,df_dow.loc[i,'<CLOSE>']])
     
-df_combi = pd.DataFrame(data=np.array(temp_tmp))
-print df_combi
+#df_combi = pd.DataFrame(data=np.array(temp_tmp))
+#print df_combi
+
+#=================================
+
+# instead:
+df_combi = df_dow.loc[:,['days','<TIME>','<OPEN>']]
 
 #df_nikkei = df_combi.loc[:,['days','Open_y','High_y','Low_y','Close_y']]
 #df_dowJones = df_combi.loc[:,['days','Open','High','Low','Close']]
@@ -147,6 +167,7 @@ print df_combi
 
 #df_combi = df_combi.drop(df_combi.index[[12376,12377]])
 
+print df_combi
 df_combi.to_csv('../Data/hourly.csv',index=False)
 
 
