@@ -171,6 +171,9 @@ def get_windows_andShift_seq_hourly(x,winLength,look_back,outDim,y_column):
 
 ###############################################
 
+'''THIS IS THE NEW FUNCTION COULD BE FUSED TO 1 FUNCTION?
+Do not know if it does the right thing, shape of resulting array is matching'''
+
 def get_windows_andShift_seq_hourly_timeDist(x,winLength,look_back,outDim,y_column):
   x_train, y_train = [], []
 
