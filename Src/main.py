@@ -11,6 +11,7 @@ import sys
 #import matplotlib.pyplot as plt
 
 config = readConf.readINI("../Data/config.conf")
+yDim = int(config['outputdim'])
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = str(config['loglevel'])
   
@@ -62,8 +63,8 @@ if config['windoweddata'] == 'on':
       x_winTrain, y_winTrain, x_winTest, y_winTest,trainMax,trainMin,testMax,testMin = loadData.make_windowed_data_noSplit(dataframe,config) 
       
   if config['timedistributed'] == 'on':
-    y_winTrain = np.reshape(y_winTrain, (len(y_winTrain), 29, 1))
-    y_winTest  = np.reshape(y_winTest, (len(y_winTest), 29, 1))
+    y_winTrain = np.reshape(y_winTrain, (len(y_winTrain), yDim, 1))
+    y_winTest  = np.reshape(y_winTest, (len(y_winTest), yDim, 1))
 
 else:
   print 'not implemented so far, exiting!'
@@ -141,6 +142,7 @@ else:
     for i in range(len(testMax)):
       predTest[i] = (testMax[i,y_column]*predTest[i]) + testMin[i,y_column]
       y_winTest[i] = (testMax[i,y_column]*y_winTest[i]) + testMin[i,y_column]
+      x_winTest[i] = (testMax[i]*x_winTest[i]) + testMin[i]
     for i in range(len(trainMax)):
       y_winTrain[i] = trainMax[i,y_column]*y_winTrain[i] + trainMin[i,y_column]
       predTrain[i] = trainMax[i,y_column]*predTrain[i] + trainMin[i,y_column]
@@ -171,7 +173,7 @@ winL = int(config['winlength'])
 #tmpPredList = np.array(tmpPredList).flatten()
 #print tmpPredList
 
-yDim = int(config['outputdim'])
+
 # If the y-dimension is bigger then one, some additional mambo jambo 
 # has to be done to get corresponding y and ^y values
 
@@ -193,10 +195,10 @@ yDim = int(config['outputdim'])
     #tmpPredTest.append(tmpY/yDim)
   #predTest = np.array(tmpPredTest)
 
-predTest = np.reshape(predTest,(len(y_winTest),29,1))
-predTrain = np.reshape(predTrain,(len(y_winTrain),29,1))
-y_winTest = np.reshape(y_winTest,(len(y_winTest),29,1))
-y_winTrain = np.reshape(y_winTrain,(len(y_winTrain),29,1))
+predTest = np.reshape(predTest,(len(y_winTest),yDim,1))
+predTrain = np.reshape(predTrain,(len(y_winTrain),yDim,1))
+y_winTest = np.reshape(y_winTest,(len(y_winTest),yDim,1))
+y_winTrain = np.reshape(y_winTrain,(len(y_winTrain),yDim,1))
 
 tmp_predTest = np.zeros(len(predTest))
 tmp_yTest = np.zeros(len(y_winTest))
@@ -210,9 +212,15 @@ for i in range(yDim,len(predTest)):
   tmp_yTest[i] = y_winTest[i,-1]
   
 tmp_predTest = np.trim_zeros(tmp_predTest)  
-tmp_yTest = np.trim_zeros(tmp_yTest) 
-print tmp_predTest[-20:-10]
-print tmp_yTest[-20:-10]
+tmp_yTest = np.trim_zeros(tmp_yTest)
+
+print 'x_winTest\n',x_winTest[-5:-1]
+
+print 'predTest\n',predTest[-5:-1]
+print 'y_winTest\n',y_winTest[-5:-1]
+
+print 'tmp_predTest\n',tmp_predTest[-5:-1]
+print 'tmp_yTest\n',tmp_yTest[-5:-1]
 
 diffTrain = np.sqrt((predTest - y_winTest)**2)
 print 'Mean of pred.-true-diff:               ', np.mean(diffTrain)

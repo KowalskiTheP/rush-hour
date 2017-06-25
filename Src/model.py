@@ -10,6 +10,7 @@ from keras.layers.convolutional import Conv1D
 from keras.layers.convolutional import MaxPooling1D
 from keras.layers.normalization import BatchNormalization
 from keras.layers import TimeDistributed
+from keras.layers import RepeatVector
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -118,6 +119,22 @@ def build_model(params):
         model.add(BatchNormalization())
   
       #model.add(Dropout(float(params['dropout'][i])))
+      
+#======================================================== 
+# This is for decupling of output and input length (Minimum 3 LSTM layers are required
+    model.add(Bidirectional(LSTM(
+      int(params['neuronsperlayer'][-1]),
+      activation = str(params['activationperlayer'][-2]),
+      return_sequences=False,
+      recurrent_activation = str(params['recurrentactivation'][-1]),
+      dropout=float(params['dropout'][-1]),
+      recurrent_dropout=float(params['dropout'][-1])
+      ),
+    merge_mode='ave'
+      )
+    )
+    model.add(RepeatVector(int(params['outputdim'])))
+#==================================================================
     
     #last LSTM layer is special because return_sequences=False
     if str(params['timedistributed']) == 'on':
@@ -171,6 +188,7 @@ def build_model(params):
         #units=int(params['outputdim']),
         #testing parameter
         units=1,
+        input_shape = (None, int(params['outputdim'])),
         activation = 'linear'
         )
       )
