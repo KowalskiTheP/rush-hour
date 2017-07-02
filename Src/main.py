@@ -44,8 +44,9 @@ if config['windoweddata'] == 'on':
   #print x_winTrain.shape
   #print y_winTrain.shape
   
-  print 'x_winTrain[1000]',x_winTrain[1]
-  print 'y_winTrain[1000]',y_winTrain[1]
+  print 'x_winTrain[1000]\n',x_winTrain[1]
+  print 'x_winTrain[1000]\n',x_winTrain[1,::4,:]
+  print 'y_winTrain[1000]\n',y_winTrain[1]
   
 
 ####### TESTING OF NEW FUNCTIONS######
@@ -94,9 +95,6 @@ else:
   # simple predictions or eval metrics
   #y_winTest = y_winTest.flatten()
   #y_winTrain = y_winTrain.flatten()
-  
-  print 'y_winTrain.shape', y_winTrain.shape  
-  print 'y_winTest.shape', y_winTest.shape
 
   if config['evalmetrics'] == 'on':
     predTest = model.eval_model(x_winTest, y_winTest, loaded_model, config, 'test data')
@@ -108,8 +106,6 @@ else:
   
   predTrain = np.reshape(predTrain,y_winTrain.shape)
   predTest = np.reshape(predTest,y_winTest.shape)
-  print 'predTrain.shape', predTrain.shape  
-  print 'predTest.shape', predTest.shape
     
   if config['normalise'] == '1':
     predTest = scaler.inverse_transform(predTest)
@@ -200,40 +196,53 @@ predTrain = np.reshape(predTrain,(len(y_winTrain),yDim,1))
 y_winTest = np.reshape(y_winTest,(len(y_winTest),yDim,1))
 y_winTrain = np.reshape(y_winTrain,(len(y_winTrain),yDim,1))
 
-tmp_predTest = np.zeros(len(predTest))
-tmp_yTest = np.zeros(len(y_winTest))
-dif = 0.
-for i in range(yDim,len(predTest)):
-  for j in range(yDim,0,-1):
-    tmp_predTest[i] = tmp_predTest[i] + predTest[i-j,j-1] * 1./j
-    dif=dif+1./j
-  tmp_predTest[i] = tmp_predTest[i] / dif
-  dif = 0.
-  tmp_yTest[i] = y_winTest[i,-1]
+#tmp_predTest = np.zeros(len(predTest))
+#tmp_yTest = np.zeros(len(y_winTest))
+#dif = 0.
+#for i in range(yDim,len(predTest)):
+  #for j in range(yDim,0,-1):
+    #tmp_predTest[i] = tmp_predTest[i] + predTest[i-j,j-1] * 1./j
+    #dif=dif+1./j
+  #tmp_predTest[i] = tmp_predTest[i] / dif
+  #dif = 0.
+  #tmp_yTest[i] = y_winTest[i,-1]
   
-tmp_predTest = np.trim_zeros(tmp_predTest)  
-tmp_yTest = np.trim_zeros(tmp_yTest)
+#tmp_predTest = np.trim_zeros(tmp_predTest)  
+#tmp_yTest = np.trim_zeros(tmp_yTest)
 
-print 'x_winTest\n',x_winTest[-5:-1]
-
-print 'predTest\n',predTest[-5:-1]
-print 'y_winTest\n',y_winTest[-5:-1]
-
-print 'tmp_predTest\n',tmp_predTest[-5:-1]
-print 'tmp_yTest\n',tmp_yTest[-5:-1]
-
-diffTrain = np.sqrt((predTest - y_winTest)**2)
-print 'Mean of pred.-true-diff:               ', np.mean(diffTrain)
-print 'Standard deviation of pred.-true-diff: ', np.std(diffTrain)
+if config['timedistributed'] == 'on':
+  for i in range(int(config['look_back'])+int(config['winlength'])-1,0,-1):
+    diffTrain = np.sqrt((predTest[:,-i] - y_winTest[:,-i])**2)
+    slopePred = (predTest[:,-i]-predTest[:,-i-1]) 
+    slopeTest = (y_winTest[:,-i]-y_winTest[:,-i-1])
+    rightSign = 0
+    for k in range(len(slopePred)):
+      if np.sign(slopePred[k]) == np.sign(slopeTest[k]):
+        rightSign = rightSign + 1
+    
+    print 'Correct Trends [%]: ',  rightSign / float(len(slopePred))
+    print 'Mean of pred.-true-diff ('+str(-i)+') :               ', np.mean(diffTrain)
+    print 'Standard deviation of pred.-true-diff ('+str(-i)+') : ', np.std(diffTrain) ,'\n'
+else:
+  diffTrain = np.sqrt((predTest[:,-i] - y_winTest[:,-i])**2)
+  print 'Mean of pred.-true-diff:               ', np.mean(diffTrain)
+  print 'Standard deviation of pred.-true-diff: ', np.std(diffTrain)
 
 #y_winTrain = y_winTrain.flatten()
 #predTrain = predTrain.flatten()
 
 if config['plotting'] == 'on':
-  #model.plot_data(y_winTrain, predTrain)
-  model.plot_data(tmp_yTest, tmp_predTest)
-  model.plot_data(tmp_yTest[-8:-1], tmp_predTest[-8:-1])
-  model.plot_data(y_winTest.flatten(), predTest.flatten())
+  model.plot_data(y_winTrain[:,-1], predTrain[:,-1])
+  model.plot_data(y_winTest[:,-1], predTest[:,-1])
+  model.plot_data(y_winTest[::4,-5:-1].flatten(), predTest[::4,-5:-1].flatten())
+  model.plot_data(y_winTest[-17,-5:-1], predTest[-17,-5:-1])
+  model.plot_data(y_winTest[-13,-5:-1], predTest[-13,-5:-1])
+  model.plot_data(y_winTest[-9,-5:-1], predTest[-9,-5:-1])
+  model.plot_data(y_winTest[-5,-5:-1], predTest[-5,-5:-1])
+  model.plot_data(y_winTest[-1,-5:-1], predTest[-1,-5:-1])
+  #model.plot_data(tmp_yTest, tmp_predTest)
+  #model.plot_data(tmp_yTest[-8:-1], tmp_predTest[-8:-1])
+  #model.plot_data(y_winTest.flatten(), predTest.flatten())
   #model.plot_data(y_winTest[0:len(tmpPredList)], tmpPredList)
   #model.plot_data(x_winTest_deN[-50:-1,-1,2], predTest[-50:-1])
 

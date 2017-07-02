@@ -6,6 +6,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from datetime import datetime
 import sys
+import matplotlib.pyplot as plt
 
 ## loading data from a CSV file in a pandas DataFrame. 
 ## The diff between the values in dateColumn and the refdate gets also calculated and added.
@@ -74,6 +75,21 @@ def get_windows(x,y,winLength):
     x_train.append(x[i:i+winLength])
     y_train.append(y[i+winLength-1])
   return np.array(x_train), np.array(y_train)
+
+###############################################
+
+def smoothing(data, config):
+  data_tmp = data.copy()
+  smooth = int(config['smoothingparam'])
+  yColumn = int(config['y_column'])
+  for i in range(smooth,len(data)):
+    smoothSum = 0.
+    weightSum = 0.
+    for j in range(smooth):
+      smoothSum = smoothSum + data_tmp[i-j,yColumn] * (1./(j*0.5+1.))
+      weightSum = weightSum + 1./(j+1.)
+    data[i,yColumn] = smoothSum / weightSum
+  return data
 
 ###############################################
 
@@ -230,15 +246,14 @@ def make_windowed_data_withSplit(dataframe, config):
   yDim = int(config['outputdim'])
   y_column = int(config['y_column'])
   dataSet_Full = getDataSet_noSplit(dataframe, config['columns'])
-  print dataSet_Full.shape
+  dataSet_Full_tmp = dataSet_Full.copy()
+
   #dataSetTrain, dataSetTest = split_data(dataSet_Full, float(config['traintestsplit']))
 
 #=========================================================================================
-# The rushian data is very dirty! If its cleaned up, also a few houndred days are left. Therefor its probably the best, if use it in its dirty original form. 
+# The rushian data is very dirty! If its cleaned up, only a few houndred days are left. Therefor its probably the best, if use it in its dirty original form. 
 #The following code was used to clean the data up.
-
-  tmp=[]
-  xdata = []
+  tmp, xdata = [], []
   stop = 0
   for i in range(1,len(dataSet_Full)): 
     if dataSet_Full[i,0] == dataSet_Full[i-1,0] and dataSet_Full[i,2] != dataSet_Full[i-1,2]:
@@ -247,28 +262,34 @@ def make_windowed_data_withSplit(dataframe, config):
     else:
       if len(tmp)==8:
         xdata.append(tmp)
-
       tmp = []
       if dataSet_Full[i,1] > 7. and dataSet_Full[i,1] < 17.:
         tmp.append(dataSet_Full[i])
-
   xdata = np.array(xdata)
-  print xdata.shape
   xdata = np.reshape(xdata,(len(xdata)*8,xDim))
-  print xdata
-  print 'len(xdata)', len(xdata), xdata.shape
   dataSet_Full = np.array(xdata)
 #=========================================================================================
 
   dataSetTrain, dataSetTest = split_data(dataSet_Full, float(config['traintestsplit']))
+  
+  dataSetTrain = smoothing(dataSetTrain, config)
+  dataSetTest_smooth = smoothing(dataSetTest, config)
+  
   x_winTrain, y_winTrain = get_windows_andShift_seq_hourly(dataSetTrain, winL, lookB,yDim,y_column)
   x_winTest, y_winTest = get_windows_andShift_seq_hourly(dataSetTest, winL, lookB,yDim,y_column)
+  x_winTest_smooth, y_winTest_smooth = get_windows_andShift_seq_hourly(dataSetTest_smooth, winL, lookB,yDim,y_column)
+  
+  x_winTest = x_winTest_smooth
+  
+  print 'x_winTrain[0]\n',x_winTrain[0]
+  print 'y_winTrain[0]\n',y_winTrain[0]
   
   # Deleting evening to morning predictions
-  if 1 == 0:
+  if 0 == 0:
     x_tmp, y_tmp = [],[]
     for i in range(len(x_winTrain)):
-      if x_winTrain[i,-1,1] != 16 and x_winTrain[i,-1,1] != 17:
+      #if x_winTrain[i,-1,1] != 16 and x_winTrain[i,-1,1] != 17:
+      if x_winTrain[i,0,1] == 8. or x_winTrain[i,0,1] == 9.:
         x_tmp.append(x_winTrain[i])
         y_tmp.append(y_winTrain[i])
     x_winTrain = np.array(x_tmp)
@@ -276,7 +297,8 @@ def make_windowed_data_withSplit(dataframe, config):
   
   x_tmp, y_tmp = [],[]
   for i in range(len(x_winTest)):
-    if x_winTest[i,-1,1] != 16 and x_winTest[i,-1,1] != 17:
+    #if x_winTest[i,-1,1] != 16 and x_winTest[i,-1,1] != 17:
+    if x_winTest[i,0,1] == 8. or x_winTest[i,0,1] == 9.:
       x_tmp.append(x_winTest[i])
       y_tmp.append(y_winTest[i])
   x_winTest = np.array(x_tmp)
