@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 from datetime import datetime
 import sys
 import matplotlib.pyplot as plt
+from scipy.interpolate import CubicSpline
 
 ## loading data from a CSV file in a pandas DataFrame. 
 ## The diff between the values in dateColumn and the refdate gets also calculated and added.
@@ -77,19 +78,44 @@ def get_windows(x,y,winLength):
   return np.array(x_train), np.array(y_train)
 
 ###############################################
+def clamp(n, minn, maxn):
+    if n < minn:
+        return minn
+    elif n >= maxn:
+        return maxn
+    else:
+        return n
 
 def smoothing(data, config):
   data_tmp = data.copy()
+  data_return = data.copy()
   smooth = int(config['smoothingparam'])
   yColumn = int(config['y_column'])
-  for i in range(smooth,len(data)):
+  for i in range(smooth+1,len(data)):
     smoothSum = 0.
     weightSum = 0.
+    w = 1.
     for j in range(smooth):
-      smoothSum = smoothSum + data_tmp[i-j,yColumn] * (1./(j*0.5+1.))
-      weightSum = weightSum + 1./(j+1.)
-    data[i,yColumn] = smoothSum / weightSum
-  return data
+      
+      #smoothSum = smoothSum + data_tmp[i-j,yColumn] * (1./(j*0.5+1.))
+      #weightSum = weightSum + 1./(j*0.5+1.)
+    #data_return[i,yColumn] = smoothSum / weightSum
+      
+      m = abs(data_tmp[i-j,yColumn]-data_tmp[i-j-1,yColumn])
+      std = np.std(data_tmp[i-20:i,yColumn])
+      if np.isnan(std):
+        std = np.std(data_tmp[i:i+20,yColumn])
+      wj = clamp((m/std),(1./float(smooth)),1.)
+      if w - wj <= 0.:
+        wj = w
+        w = 0.
+      else:
+        w = w - wj
+      smoothSum = smoothSum + data_tmp[i-j,yColumn] * wj
+      weightSum = weightSum + wj
+      #weightSum = weightSum + (1/(abs(data_tmp[i-j,yColumn]-data_tmp[i-j-1,yColumn])))
+    data_return[i,yColumn] = smoothSum
+  return data_return
 
 ###############################################
 
@@ -271,14 +297,19 @@ def make_windowed_data_withSplit(dataframe, config):
 #=========================================================================================
 
   dataSetTrain, dataSetTest = split_data(dataSet_Full, float(config['traintestsplit']))
-  
+    
   dataSetTrain = smoothing(dataSetTrain, config)
   dataSetTest_smooth = smoothing(dataSetTest, config)
   
+  x = np.arange(len(dataSetTest))
+  plt.plot(x,dataSetTest_smooth[:,y_column],color = 'red')
+  plt.plot(x,dataSetTest[:,y_column])
+  plt.show()
+  
   x_winTrain, y_winTrain = get_windows_andShift_seq_hourly(dataSetTrain, winL, lookB,yDim,y_column)
   x_winTest, y_winTest = get_windows_andShift_seq_hourly(dataSetTest, winL, lookB,yDim,y_column)
-  x_winTest_smooth, y_winTest_smooth = get_windows_andShift_seq_hourly(dataSetTest_smooth, winL, lookB,yDim,y_column)
   
+  x_winTest_smooth, y_winTest_smooth = get_windows_andShift_seq_hourly(dataSetTest_smooth, winL, lookB,yDim,y_column)
   x_winTest = x_winTest_smooth
   
   print 'x_winTrain[0]\n',x_winTrain[0]
