@@ -243,6 +243,7 @@ if config['plotting'] == 'on':
     model.plot_data(y_winTest[-5,-5:-1], predTest[-5,-5:-1])
     model.plot_data(y_winTest[-1,-5:-1], predTest[-1,-5:-1])
   else:
+    print 'not implemented, at the moment'
     # temporarly not working
     #tmp_predTest = np.zeros(len(predTest))
     #tmp_yTest = np.zeros(len(y_winTest))
