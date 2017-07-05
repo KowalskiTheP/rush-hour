@@ -38,6 +38,8 @@ if config['windoweddata'] == 'on':
     if config['normalise'] == '4':
       x_winTrain, y_winTrain, x_winTest, y_winTest,trainMax,trainMin,testMax,testMin = loadData.make_windowed_data_withSplit(dataframe,config)
 
+  y_winTrain = np.reshape(y_winTrain, (len(y_winTrain), 29,1))
+  y_winTest = np.reshape(y_winTest, (len(y_winTest), 29,1))
 ####### TESTING OF NEW FUNCTIONS######
   #if config['split'] == 'on':
     #if config['normalise'] == '3':   
@@ -70,6 +72,8 @@ else:
   model1 = model.build_model(config)
   
   # train the model
+  print 'x_winTrain shape:', np.shape(x_winTrain)
+  print 'y_winTrain shape:', np.shape(y_winTrain)
   model1.fit(x_winTrain, y_winTrain, int(config['batchsize']), int(config['epochs']))
   
   jsonFile = str(config['jsonfile'])
@@ -78,8 +82,8 @@ else:
   loaded_model = model.load_model(jsonFile, modelFile)
 
   # simple predictions or eval metrics
-  y_winTest = y_winTest.flatten()
-  y_winTrain = y_winTrain.flatten()
+  #y_winTest = y_winTest.flatten()
+  #y_winTrain = y_winTrain.flatten()
 
   if config['evalmetrics'] == 'on':
     predTest = model.eval_model(x_winTest, y_winTest, loaded_model, config, 'test data')

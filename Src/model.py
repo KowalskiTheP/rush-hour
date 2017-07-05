@@ -3,6 +3,7 @@ from keras.models import Sequential
 from keras.models import model_from_json
 from keras.layers import Dense
 from keras.layers import LSTM
+from keras.layers.core import Flatten
 from keras.layers.wrappers import Bidirectional
 from keras.optimizers import Adam
 from keras.layers import Dropout
@@ -50,12 +51,15 @@ def build_model(params):
   #print len(params['neuronsperlayer'])
   #print params['neuronsperlayer']
   if params['cnn'] == 'on':
-    
-    model.add(Conv1D(input_shape = (None, int(params['inputdim'])), filters=8, kernel_size=7, padding='causal', activation='relu'))
+    print 'huhu'
+    #model.add(Conv1D(filters=8, kernel_size=7, padding='causal',input_shape = (None,int(params['inputdim'])), activation='relu'))
+    model.add(TimeDistributed(Conv1D(filters=8, kernel_size=7, padding='causal', activation='relu'),input_shape = [None,int(params['winlength']), int(params['inputdim'])]))
     #model.add(Conv1D(filters=32, kernel_size=3, padding='causal', activation='relu'))
-    if str(params['batchnorm']) == 'on':
-      model.add(BatchNormalization())
-    model.add(MaxPooling1D(pool_size=2))
+    #if str(params['batchnorm']) == 'on':
+    #  model.add(BatchNormalization())
+    #model.add((MaxPooling1D(pool_size=2)))
+    model.add(TimeDistributed(MaxPooling1D(pool_size=2)))
+    model.add(TimeDistributed(Flatten()))
     #model.add(Conv1D(filters=4, kernel_size=1, padding='causal', activation='relu'))
     ##model.add(Conv1D(filters=16, kernel_size=1, padding='causal', activation='relu'))
     #if str(params['batchnorm']) == 'on':
@@ -73,7 +77,8 @@ def build_model(params):
     if int(params['verbosity']) < 2:
       print 'layer 0: ',params['neuronsperlayer'][0]
     if params['cnn'] == 'on':
-      model.add(Bidirectional(LSTM(
+      #model.add(Bidirectional(LSTM(
+      model.add(LSTM(
         int(params['neuronsperlayer'][0]),
         activation = str(params['activationperlayer'][0]),
         return_sequences=True,
@@ -81,7 +86,7 @@ def build_model(params):
         dropout=float(params['dropout'][0]),
         recurrent_dropout=float(params['dropout'][0])
         )
-        )
+        #)
       )
     else:
       model.add(LSTM(
@@ -104,7 +109,8 @@ def build_model(params):
       if int(params['verbosity']) < 2:
         print 'layer ', i, ':', params['neuronsperlayer'][i]
       
-      model.add(Bidirectional(LSTM(
+      #model.add(Bidirectional(LSTM(
+      model.add(LSTM(
         int(params['neuronsperlayer'][i]),
         activation = str(params['activationperlayer'][i]),
         return_sequences=True,
@@ -112,7 +118,7 @@ def build_model(params):
         dropout=float(params['dropout'][i]),
         recurrent_dropout=float(params['dropout'][i])
         )
-        )
+        #)
       )
       if str(params['batchnorm']) == 'on':
         model.add(BatchNormalization())
@@ -126,16 +132,18 @@ def build_model(params):
       returnSequences = False
     if int(params['verbosity']) < 2:
       print 'last LSTM layer: ',params['neuronsperlayer'][-1]
-    model.add(Bidirectional(LSTM(
+    #model.add(Bidirectional(LSTM(
+    model.add(LSTM(
       int(params['neuronsperlayer'][-1]),
       activation = str(params['activationperlayer'][-1]),
       return_sequences=returnSequences,
       recurrent_activation = str(params['recurrentactivation'][-1]),
       dropout=float(params['dropout'][i]),
       recurrent_dropout=float(params['dropout'][i])
-      ),
-    merge_mode='ave'
       )
+    #,
+    #merge_mode='ave'
+      #)
     )
     if str(params['batchnorm']) == 'on':
       model.add(BatchNormalization())
@@ -170,7 +178,7 @@ def build_model(params):
     model.add(TimeDistributed(Dense(
         #units=int(params['outputdim']),
         #testing parameter
-        units=8,
+        1,
         activation = 'linear'
         )
       )
