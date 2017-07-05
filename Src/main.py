@@ -4,12 +4,14 @@ import loadData
 import os
 import time
 import numpy as np
+import matplotlib.pyplot as plt
 np.set_printoptions(linewidth=150)
 import sys
 
 #import matplotlib.pyplot as plt
 
 config = readConf.readINI("../Data/config.conf")
+yDim = int(config['outputdim'])
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = str(config['loglevel'])
   
@@ -37,6 +39,15 @@ if config['windoweddata'] == 'on':
       x_winTrain, y_winTrain, x_winTest, y_winTest,trainRef, testRef = loadData.make_windowed_data_withSplit(dataframe,config)
     if config['normalise'] == '4':
       x_winTrain, y_winTrain, x_winTest, y_winTest,trainMax,trainMin,testMax,testMin = loadData.make_windowed_data_withSplit(dataframe,config)
+      
+  #y_winTrain = np.reshape(y_winTrain, (len(y_winTrain), 29, 1))
+  #print x_winTrain.shape
+  #print y_winTrain.shape
+  
+  print 'x_winTrain[1000]\n',x_winTrain[1]
+  print 'x_winTrain[1000]\n',x_winTrain[1,::4,:]
+  print 'y_winTrain[1000]\n',y_winTrain[1]
+  
 
   y_winTrain = np.reshape(y_winTrain, (len(y_winTrain), 29,1))
   y_winTest = np.reshape(y_winTest, (len(y_winTest), 29,1))
@@ -53,6 +64,10 @@ if config['windoweddata'] == 'on':
       x_winTrain, y_winTrain, x_winTest, y_winTest,trainRef, testRef = loadData.make_windowed_data_noSplit(dataframe,config)
     if config['normalise'] == '4':
       x_winTrain, y_winTrain, x_winTest, y_winTest,trainMax,trainMin,testMax,testMin = loadData.make_windowed_data_noSplit(dataframe,config) 
+      
+  if config['timedistributed'] == 'on':
+    y_winTrain = np.reshape(y_winTrain, (len(y_winTrain), yDim, 1))
+    y_winTest  = np.reshape(y_winTest, (len(y_winTest), yDim, 1))
 
 else:
   print 'not implemented so far, exiting!'
@@ -92,6 +107,9 @@ else:
     predTest = model.predict_point_by_point(loaded_model, x_winTest)
     predTrain = model.predict_point_by_point(loaded_model, x_winTrain)
     print np.column_stack((pred, y_winTest))
+  
+  predTrain = np.reshape(predTrain,y_winTrain.shape)
+  predTest = np.reshape(predTest,y_winTest.shape)
     
   if config['normalise'] == '1':
     predTest = scaler.inverse_transform(predTest)
@@ -124,86 +142,113 @@ else:
     for i in range(len(testMax)):
       predTest[i] = (testMax[i,y_column]*predTest[i]) + testMin[i,y_column]
       y_winTest[i] = (testMax[i,y_column]*y_winTest[i]) + testMin[i,y_column]
-      x_winTest_deN[i] = (testMax[i]*x_winTest[i]) + testMin[i]
+      x_winTest[i] = (testMax[i]*x_winTest[i]) + testMin[i]
     for i in range(len(trainMax)):
       y_winTrain[i] = trainMax[i,y_column]*y_winTrain[i] + trainMin[i,y_column]
       predTrain[i] = trainMax[i,y_column]*predTrain[i] + trainMin[i,y_column]
       
-  #tmpTestWin_deN = x_winTest_deN[0]
-  #tmpTestWin = x_winTest[0]
-  tmpPredList =[]
-  #for i in range(0,10):
-    #print 'np.reshape(tmpTestWin,(1,19,3)):\n',np.reshape(tmpTestWin,(1,19,3))
-    #print 'loaded_model.predict(np.reshape(tmpTestWin,(1,19,3)))', loaded_model.predict(np.reshape(tmpTestWin,(1,19,3)))
-    #print 'testMin[i,y_column] ', testMin[i,y_column] 
-    #tmpPred_deN = loaded_model.predict(np.reshape(tmpTestWin,(1,19,3)))*testMax[i,y_column]+testMin[i,y_column] 
-    #print 'tmpPred_deN',tmpPred_deN
-    #tmpPredList.append(np.copy(tmpPred_deN))
-    #tmpTestWin_deN = x_winTest_deN[i+1]
-    #for k in range(i):
-      #tmpTestWin_deN[19-i+k,-1] = tmpPredList[k]  
-    #print 'tmpTestWin_deN:\n',tmpTestWin_deN
-    #irgendwasMin,irgendwasMax,tmpTestWin,tmpPred_N = loadData.minMaxNorm(np.reshape(tmpTestWin_deN,(1,19,3)),tmpPred_deN,y_column,yNorm=True)
-    #tmpTestWin = tmpTestWin / irgendwasMax
-    #print 'tmpTestWin new:\n', tmpTestWin
-    #testMax[i+1] = irgendwasMax
-    #testMin[i+1] = irgendwasMin
-    
-#print 'tmpPredList final',np.array(tmpPredList)
-#tmpPredList = np.array(tmpPredList).flatten()
-winL = int(config['winlength'])
-saftyCopy = np.copy(y_winTest)
-toPredWin = np.reshape(np.copy(x_winTest_deN[0]),(1,winL,3))
-toPredWin_deN = np.copy(x_winTest_deN[0])
-toPredMin = np.copy(testMin[0])
-toPredMax = np.copy(testMax[0])
-for i in range(19):
-  toPredMin,toPredMax,toPredWin,y_winTest_deN =loadData.minMaxNorm(toPredWin,saftyCopy,y_column,yNorm=True)
-  toPredWin = toPredWin / toPredMax
-  print i
-  print toPredWin
-  tmpPred_deN = np.copy(loaded_model.predict(toPredWin) ) *toPredMax[0,y_column]+toPredMin[0,y_column]
-  tmpPredList.append(np.copy(tmpPred_deN))
-  toPredWin = np.copy(toPredWin)  * toPredMax + toPredMin 
-  for a in range(len(toPredWin[0])-1):
-    toPredWin[0,a,:] = toPredWin[0,a+1,:]
-  toPredWin[0,-1,:] = x_winTest[i+1,-1]*testMax[i+1]+testMin[i+1]
-  toPredWin[0,-1,-1] = tmpPred_deN
-  
-tmpPredList = np.array(tmpPredList).flatten()
-print tmpPredList
 
-yDim = int(config['outputdim'])
+winL = int(config['winlength'])
+#==========================
+# with some luck, not needed anymore 
+#==========================
+#saftyCopy = np.copy(y_winTest)
+#toPredWin = np.reshape(np.copy(x_winTest_deN[0]),(1,winL,3))
+#toPredWin_deN = np.copy(x_winTest_deN[0])
+#toPredMin = np.copy(testMin[0])
+#toPredMax = np.copy(testMax[0])
+#for i in range(19):
+  #toPredMin,toPredMax,toPredWin,y_winTest_deN =loadData.minMaxNorm(toPredWin,saftyCopy,y_column,yNorm=True)
+  #toPredWin = toPredWin / toPredMax
+  #print i
+  #print toPredWin
+  #tmpPred_deN = np.copy(loaded_model.predict(toPredWin) ) *toPredMax[0,y_column]+toPredMin[0,y_column]
+  #tmpPredList.append(np.copy(tmpPred_deN))
+  #toPredWin = np.copy(toPredWin)  * toPredMax + toPredMin 
+  #for a in range(len(toPredWin[0])-1):
+    #toPredWin[0,a,:] = toPredWin[0,a+1,:]
+  #toPredWin[0,-1,:] = x_winTest[i+1,-1]*testMax[i+1]+testMin[i+1]
+  #toPredWin[0,-1,-1] = tmpPred_deN
+  
+#tmpPredList = np.array(tmpPredList).flatten()
+#print tmpPredList
+
+
 # If the y-dimension is bigger then one, some additional mambo jambo 
 # has to be done to get corresponding y and ^y values
-if yDim > 1:
-  print 'y dimension is bigger then 1'
-  predTrain = np.reshape(predTrain,(len(y_winTrain),yDim))
-  l = list(range(0, yDim-1))
-  lback = list(range((len(y_winTest)-yDim+1),len(y_winTest)))
-  lfull = l + lback
-  y_winTest = np.delete(y_winTest, lfull, 0)
-  y_winTest = np.delete(y_winTest, l, 1)
-  y_winTest = y_winTest.flatten()
-  tmpPredTest = []
-  tmpPredTest_test = []
-  for i in range(len(y_winTest)):
-    tmpY = 0.
-    for j in range(yDim):
-      tmpY = tmpY + predTest[i+j,yDim-1-j]
-    tmpPredTest.append(tmpY/yDim)
-  predTest = np.array(tmpPredTest)
 
-diffTrain = np.sqrt((predTest - y_winTest)**2)
-print 'Mean of pred.-true-diff:               ', np.mean(diffTrain)
-print 'Standard deviation of pred.-true-diff: ', np.std(diffTrain)
+#if yDim > 1:
+  #print 'y dimension is bigger then 1'
+  #predTrain = np.reshape(predTrain,(len(y_winTrain),yDim))
+  #l = list(range(0, yDim-1))
+  #lback = list(range((len(y_winTest)-yDim+1),len(y_winTest)))
+  #lfull = l + lback
+  #y_winTest = np.delete(y_winTest, lfull, 0)
+  #y_winTest = np.delete(y_winTest, l, 1)
+  #y_winTest = y_winTest.flatten()
+  #tmpPredTest = []
+  #tmpPredTest_test = []
+  #for i in range(len(y_winTest)):
+    #tmpY = 0.
+    #for j in range(yDim):
+      #tmpY = tmpY + predTest[i+j,yDim-1-j]
+    #tmpPredTest.append(tmpY/yDim)
+  #predTest = np.array(tmpPredTest)
 
+predTest = np.reshape(predTest,(len(y_winTest),yDim,1))
+predTrain = np.reshape(predTrain,(len(y_winTrain),yDim,1))
+y_winTest = np.reshape(y_winTest,(len(y_winTest),yDim,1))
+y_winTrain = np.reshape(y_winTrain,(len(y_winTrain),yDim,1))
+
+#tmp_predTest = np.zeros(len(predTest))
+#tmp_yTest = np.zeros(len(y_winTest))
+#dif = 0.
+#for i in range(yDim,len(predTest)):
+  #for j in range(yDim,0,-1):
+    #tmp_predTest[i] = tmp_predTest[i] + predTest[i-j,j-1] * 1./j
+    #dif=dif+1./j
+  #tmp_predTest[i] = tmp_predTest[i] / dif
+  #dif = 0.
+  #tmp_yTest[i] = y_winTest[i,-1]
+  
+#tmp_predTest = np.trim_zeros(tmp_predTest)  
+#tmp_yTest = np.trim_zeros(tmp_yTest)
+
+if config['timedistributed'] == 'on':
+  for i in range(int(config['look_back'])+int(config['winlength'])-1,0,-1):
+    diffTrain = np.sqrt((predTest[:,-i] - y_winTest[:,-i])**2)
+    slopePred = (predTest[:,-i]-predTest[:,-i-1]) 
+    slopeTest = (y_winTest[:,-i]-y_winTest[:,-i-1])
+    rightSign = 0
+    for k in range(len(slopePred)):
+      if np.sign(slopePred[k]) == np.sign(slopeTest[k]):
+        rightSign = rightSign + 1
+    
+    print 'Correct Trends [%]: ',  rightSign / float(len(slopePred))
+    print 'Mean of pred.-true-diff ('+str(-i)+') :               ', np.mean(diffTrain)
+    print 'Standard deviation of pred.-true-diff ('+str(-i)+') : ', np.std(diffTrain) ,'\n'
+else:
+  diffTrain = np.sqrt((predTest[:,-i] - y_winTest[:,-i])**2)
+  print 'Mean of pred.-true-diff:               ', np.mean(diffTrain)
+  print 'Standard deviation of pred.-true-diff: ', np.std(diffTrain)
+
+#y_winTrain = y_winTrain.flatten()
+#predTrain = predTrain.flatten()
 
 if config['plotting'] == 'on':
-  model.plot_data(y_winTrain, predTrain)
-  model.plot_data(y_winTest, predTest)
-  model.plot_data(y_winTest[0:len(tmpPredList)], tmpPredList)
-  model.plot_data(x_winTest_deN[-50:-1,-1,2], predTest[-50:-1])
+  model.plot_data(y_winTrain[:,-1], predTrain[:,-1])
+  model.plot_data(y_winTest[:,-1], predTest[:,-1])
+  model.plot_data(y_winTest[::4,-5:-1].flatten(), predTest[::4,-5:-1].flatten())
+  model.plot_data(y_winTest[-17,-5:-1], predTest[-17,-5:-1])
+  model.plot_data(y_winTest[-13,-5:-1], predTest[-13,-5:-1])
+  model.plot_data(y_winTest[-9,-5:-1], predTest[-9,-5:-1])
+  model.plot_data(y_winTest[-5,-5:-1], predTest[-5,-5:-1])
+  model.plot_data(y_winTest[-1,-5:-1], predTest[-1,-5:-1])
+  #model.plot_data(tmp_yTest, tmp_predTest)
+  #model.plot_data(tmp_yTest[-8:-1], tmp_predTest[-8:-1])
+  #model.plot_data(y_winTest.flatten(), predTest.flatten())
+  #model.plot_data(y_winTest[0:len(tmpPredList)], tmpPredList)
+  #model.plot_data(x_winTest_deN[-50:-1,-1,2], predTest[-50:-1])
 
   
 
