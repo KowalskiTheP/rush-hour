@@ -52,24 +52,24 @@ def build_model(params):
   #print params['neuronsperlayer']
   if params['cnn'] == 'on':
     print 'huhu'
-    #model.add(Conv1D(filters=8, kernel_size=7, padding='causal',input_shape = (None,int(params['inputdim'])), activation='relu'))
-    model.add(TimeDistributed(Conv1D(filters=8, kernel_size=7, padding='causal', activation='relu'),input_shape = [None,int(params['winlength']), int(params['inputdim'])]))
-    #model.add(Conv1D(filters=32, kernel_size=3, padding='causal', activation='relu'))
-    #if str(params['batchnorm']) == 'on':
-    #  model.add(BatchNormalization())
-    #model.add((MaxPooling1D(pool_size=2)))
-    model.add(TimeDistributed(MaxPooling1D(pool_size=2)))
-    model.add(TimeDistributed(Flatten()))
-    #model.add(Conv1D(filters=4, kernel_size=1, padding='causal', activation='relu'))
-    ##model.add(Conv1D(filters=16, kernel_size=1, padding='causal', activation='relu'))
-    #if str(params['batchnorm']) == 'on':
-      #model.add(BatchNormalization())
-    #model.add(MaxPooling1D(pool_size=2))
-    #model.add(Conv1D(filters=20, kernel_size=3, padding='causal', activation='relu'))
-    #model.add(Conv1D(filters=50, kernel_size=3, padding='causal', activation='relu'))
-    #if str(params['batchnorm']) == 'on':
-      #model.add(BatchNormalization())
-    #model.add(MaxPooling1D(pool_size=2))
+    model.add(Conv1D(filters=32, kernel_size=7, padding='causal',input_shape = (None,int(params['inputdim'])), activation='relu'))
+    #model.add(TimeDistributed(Conv1D(filters=8, kernel_size=7, padding='causal', activation='relu'),input_shape = [None,int(params['winlength']), int(params['inputdim'])]))
+    model.add(Conv1D(filters=32, kernel_size=7, padding='causal', activation='relu'))
+    if str(params['batchnorm']) == 'on':
+      model.add(BatchNormalization())
+    model.add((MaxPooling1D(pool_size=2)))
+    #model.add(TimeDistributed(MaxPooling1D(pool_size=2)))
+    #model.add(TimeDistributed(Flatten()))
+    model.add(Conv1D(filters=16, kernel_size=5, padding='causal', activation='relu'))
+    model.add(Conv1D(filters=16, kernel_size=5, padding='causal', activation='relu'))
+    if str(params['batchnorm']) == 'on':
+      model.add(BatchNormalization())
+    model.add(MaxPooling1D(pool_size=2))
+    model.add(Conv1D(filters=8, kernel_size=3, padding='causal', activation='relu'))
+    model.add(Conv1D(filters=8, kernel_size=3, padding='causal', activation='relu'))
+    if str(params['batchnorm']) == 'on':
+      model.add(BatchNormalization())
+    model.add(MaxPooling1D(pool_size=2))
   
   # first layer is special, gets build by hand
   if isinstance(params['neuronsperlayer'], list):

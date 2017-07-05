@@ -210,7 +210,7 @@ y_winTrain = np.reshape(y_winTrain,(len(y_winTrain),yDim,1))
 #tmp_predTest = np.trim_zeros(tmp_predTest)  
 #tmp_yTest = np.trim_zeros(tmp_yTest)
 
-if config['timedistributed'] == 'on':
+if str(config['timedistributed']) == 'on':
   for i in range(int(config['look_back'])+int(config['winlength'])-1,0,-1):
     diffTrain = np.sqrt((predTest[:,-i] - y_winTest[:,-i])**2)
     slopePred = (predTest[:,-i]-predTest[:,-i-1]) 
@@ -224,7 +224,7 @@ if config['timedistributed'] == 'on':
     print 'Mean of pred.-true-diff ('+str(-i)+') :               ', np.mean(diffTrain)
     print 'Standard deviation of pred.-true-diff ('+str(-i)+') : ', np.std(diffTrain) ,'\n'
 else:
-  diffTrain = np.sqrt((predTest[:,-i] - y_winTest[:,-i])**2)
+  diffTrain = np.sqrt((predTest[:,-1] - y_winTest[:,-1])**2)
   print 'Mean of pred.-true-diff:               ', np.mean(diffTrain)
   print 'Standard deviation of pred.-true-diff: ', np.std(diffTrain)
 
