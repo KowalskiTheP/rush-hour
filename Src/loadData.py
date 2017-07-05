@@ -302,9 +302,9 @@ def make_windowed_data_withSplit(dataframe, config):
   dataSetTest_smooth = smoothing(dataSetTest, config)
   
   x = np.arange(len(dataSetTest))
-  plt.plot(x,dataSetTest_smooth[:,y_column],color = 'red')
-  plt.plot(x,dataSetTest[:,y_column])
-  plt.show()
+  #plt.plot(x,dataSetTest_smooth[:,y_column],color = 'red')
+  #plt.plot(x,dataSetTest[:,y_column])
+  #plt.show()
   
   x_winTrain, y_winTrain = get_windows_andShift_seq_hourly(dataSetTrain, winL, lookB,yDim,y_column)
   x_winTest, y_winTest = get_windows_andShift_seq_hourly(dataSetTest, winL, lookB,yDim,y_column)

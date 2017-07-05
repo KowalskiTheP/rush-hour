@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 np.set_printoptions(linewidth=150)
 import sys
+from keras.callbacks import EarlyStopping
 
 #import matplotlib.pyplot as plt
 
@@ -83,9 +84,9 @@ else:
   
   # build the specified model
   model1 = model.build_model(config)
-  
+  earlyStopping = EarlyStopping(monitor='loss', min_delta=0.001, patience=10, verbose=2)
   # train the model
-  model1.fit(x_winTrain, y_winTrain, int(config['batchsize']), int(config['epochs']))
+  model1.fit(x_winTrain, y_winTrain, int(config['batchsize']), int(config['epochs']), validation_data=(x_winTest, y_winTest), callbacks=[earlyStopping])
   
   jsonFile = str(config['jsonfile'])
   modelFile = str(config['modelfile'])
@@ -232,19 +233,34 @@ else:
 #predTrain = predTrain.flatten()
 
 if config['plotting'] == 'on':
-  model.plot_data(y_winTrain[:,-1], predTrain[:,-1])
-  model.plot_data(y_winTest[:,-1], predTest[:,-1])
-  model.plot_data(y_winTest[::4,-5:-1].flatten(), predTest[::4,-5:-1].flatten())
-  model.plot_data(y_winTest[-17,-5:-1], predTest[-17,-5:-1])
-  model.plot_data(y_winTest[-13,-5:-1], predTest[-13,-5:-1])
-  model.plot_data(y_winTest[-9,-5:-1], predTest[-9,-5:-1])
-  model.plot_data(y_winTest[-5,-5:-1], predTest[-5,-5:-1])
-  model.plot_data(y_winTest[-1,-5:-1], predTest[-1,-5:-1])
-  #model.plot_data(tmp_yTest, tmp_predTest)
-  #model.plot_data(tmp_yTest[-8:-1], tmp_predTest[-8:-1])
-  #model.plot_data(y_winTest.flatten(), predTest.flatten())
-  #model.plot_data(y_winTest[0:len(tmpPredList)], tmpPredList)
-  #model.plot_data(x_winTest_deN[-50:-1,-1,2], predTest[-50:-1])
+  if str(config['timedistributed']) == 'on':
+    model.plot_data(y_winTrain[:,-1], predTrain[:,-1])
+    model.plot_data(y_winTest[:,-1], predTest[:,-1])
+    model.plot_data(y_winTest[::4,-5:-1].flatten(), predTest[::4,-5:-1].flatten())
+    model.plot_data(y_winTest[-17,-5:-1], predTest[-17,-5:-1])
+    model.plot_data(y_winTest[-13,-5:-1], predTest[-13,-5:-1])
+    model.plot_data(y_winTest[-9,-5:-1], predTest[-9,-5:-1])
+    model.plot_data(y_winTest[-5,-5:-1], predTest[-5,-5:-1])
+    model.plot_data(y_winTest[-1,-5:-1], predTest[-1,-5:-1])
+  else:
+    tmp_predTest = np.zeros(len(predTest))
+    tmp_yTest = np.zeros(len(y_winTest))
+    dif = 0.
+    for i in range(yDim,len(predTest)):
+      for j in range(yDim,0,-1):
+        tmp_predTest[i] = tmp_predTest[i] + predTest[i-j,j-1] * 1./j
+        dif=dif+1./j
+    tmp_predTest[i] = tmp_predTest[i] / dif
+    dif = 0.
+    tmp_yTest[i] = y_winTest[i,-1]
+  
+#tmp_predTest = np.trim_zeros(tmp_predTest)  
+#tmp_yTest = np.trim_zeros(tmp_yTest)
+    model.plot_data(tmp_yTest, tmp_predTest)
+    model.plot_data(tmp_yTest[-8:-1], tmp_predTest[-8:-1])
+    model.plot_data(y_winTest.flatten(), predTest.flatten())
+    #model.plot_data(y_winTest[0:len(tmpPredList)], tmpPredList)
+    #model.plot_data(x_winTest_deN[-50:-1,-1,2], predTest[-50:-1])
 
   
 
