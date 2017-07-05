@@ -40,14 +40,6 @@ if config['windoweddata'] == 'on':
       x_winTrain, y_winTrain, x_winTest, y_winTest,trainRef, testRef = loadData.make_windowed_data_withSplit(dataframe,config)
     if config['normalise'] == '4':
       x_winTrain, y_winTrain, x_winTest, y_winTest,trainMax,trainMin,testMax,testMin = loadData.make_windowed_data_withSplit(dataframe,config)
-      
-  #y_winTrain = np.reshape(y_winTrain, (len(y_winTrain), 29, 1))
-  #print x_winTrain.shape
-  #print y_winTrain.shape
-  
-  print 'x_winTrain[1000]\n',x_winTrain[1]
-  print 'x_winTrain[1000]\n',x_winTrain[1,::4,:]
-  print 'y_winTrain[1000]\n',y_winTrain[1]
   
 
 ####### TESTING OF NEW FUNCTIONS######
@@ -84,9 +76,9 @@ else:
   
   # build the specified model
   model1 = model.build_model(config)
-  earlyStopping = EarlyStopping(monitor='loss', min_delta=0.0001, patience=10, verbose=2)
+  #earlyStopping = EarlyStopping(monitor='loss', min_delta=0.0000000000000001, patience=10, verbose=2)
   # train the model
-  model1.fit(x_winTrain, y_winTrain, int(config['batchsize']), int(config['epochs']), validation_data=(x_winTest, y_winTest), callbacks=[earlyStopping])
+  model1.fit(x_winTrain, y_winTrain, int(config['batchsize']), int(config['epochs']), validation_data=(x_winTest, y_winTest))#, callbacks=[earlyStopping])
   
   jsonFile = str(config['jsonfile'])
   modelFile = str(config['modelfile'])
@@ -236,12 +228,12 @@ if config['plotting'] == 'on':
   if str(config['timedistributed']) == 'on':
     model.plot_data(y_winTrain[:,-1], predTrain[:,-1])
     model.plot_data(y_winTest[:,-1], predTest[:,-1])
-    model.plot_data(y_winTest[::4,-5:-1].flatten(), predTest[::4,-5:-1].flatten())
-    model.plot_data(y_winTest[-17,-5:-1], predTest[-17,-5:-1])
-    model.plot_data(y_winTest[-13,-5:-1], predTest[-13,-5:-1])
-    model.plot_data(y_winTest[-9,-5:-1], predTest[-9,-5:-1])
-    model.plot_data(y_winTest[-5,-5:-1], predTest[-5,-5:-1])
-    model.plot_data(y_winTest[-1,-5:-1], predTest[-1,-5:-1])
+    #model.plot_data(y_winTest[::4,-5:-1].flatten(), predTest[::4,-5:-1].flatten())
+    model.plot_data(y_winTest[-5,-9:-1], predTest[-5,-9:-1])
+    model.plot_data(y_winTest[-4,-9:-1], predTest[-4,-9:-1])
+    model.plot_data(y_winTest[-3,-9:-1], predTest[-3,-9:-1])
+    model.plot_data(y_winTest[-2,-9:-1], predTest[-2,-9:-1])
+    model.plot_data(y_winTest[-1,-9:-1], predTest[-1,-9:-1])
   else:
     print 'not implemented, at the moment'
     # temporarly not working

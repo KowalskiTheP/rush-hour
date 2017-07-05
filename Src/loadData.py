@@ -102,9 +102,12 @@ def smoothing(data, config):
     #data_return[i,yColumn] = smoothSum / weightSum
       
       m = abs(data_tmp[i-j,yColumn]-data_tmp[i-j-1,yColumn])
-      std = np.std(data_tmp[i-20:i,yColumn])
-      if np.isnan(std):
-        std = np.std(data_tmp[i:i+20,yColumn])
+      if i-100 < smooth+1:
+        std = np.std(data_tmp[i:i+100,yColumn])
+      else:
+        std = np.std(data_tmp[i-100:i,yColumn])
+      #if np.isnan(std):
+        #std = np.std(data_tmp[i:i+100,yColumn])
       wj = clamp((m/std),(1./float(smooth)),1.)
       if w - wj <= 0.:
         wj = w
@@ -283,13 +286,13 @@ def make_windowed_data_withSplit(dataframe, config):
   stop = 0
   for i in range(1,len(dataSet_Full)): 
     if dataSet_Full[i,0] == dataSet_Full[i-1,0] and dataSet_Full[i,2] != dataSet_Full[i-1,2]:
-      if dataSet_Full[i,1] > 7. and dataSet_Full[i,1] < 17.:
+      if dataSet_Full[i,1] >= 7. and dataSet_Full[i,1] < 17.:
         tmp.append(dataSet_Full[i])
     else:
       if len(tmp)==8:
         xdata.append(tmp)
       tmp = []
-      if dataSet_Full[i,1] > 7. and dataSet_Full[i,1] < 17.:
+      if dataSet_Full[i,1] >= 7. and dataSet_Full[i,1] < 17.:
         tmp.append(dataSet_Full[i])
   xdata = np.array(xdata)
   xdata = np.reshape(xdata,(len(xdata)*8,xDim))
@@ -312,15 +315,12 @@ def make_windowed_data_withSplit(dataframe, config):
   x_winTest_smooth, y_winTest_smooth = get_windows_andShift_seq_hourly(dataSetTest_smooth, winL, lookB,yDim,y_column)
   x_winTest = x_winTest_smooth
   
-  print 'x_winTrain[0]\n',x_winTrain[0]
-  print 'y_winTrain[0]\n',y_winTrain[0]
-  
   # Deleting evening to morning predictions
   if 0 == 0:
     x_tmp, y_tmp = [],[]
     for i in range(len(x_winTrain)):
       #if x_winTrain[i,-1,1] != 16 and x_winTrain[i,-1,1] != 17:
-      if x_winTrain[i,0,1] == 8. or x_winTrain[i,0,1] == 9.:
+      if x_winTrain[i,0,1] == 7. or x_winTrain[i,0,1] == 8. or x_winTrain[i,0,1] == 9.:
         x_tmp.append(x_winTrain[i])
         y_tmp.append(y_winTrain[i])
     x_winTrain = np.array(x_tmp)
@@ -329,13 +329,11 @@ def make_windowed_data_withSplit(dataframe, config):
   x_tmp, y_tmp = [],[]
   for i in range(len(x_winTest)):
     #if x_winTest[i,-1,1] != 16 and x_winTest[i,-1,1] != 17:
-    if x_winTest[i,0,1] == 8. or x_winTest[i,0,1] == 9.:
+    if x_winTest[i,0,1] == 7. or x_winTest[i,0,1] == 8. or x_winTest[i,0,1] == 9.:
       x_tmp.append(x_winTest[i])
       y_tmp.append(y_winTest[i])
   x_winTest = np.array(x_tmp)
   y_winTest = np.array(y_tmp)
-  
-  #print 'x_winTest[0]:\n', x_winTest[1]
   
   if config['normalise'] == '3':
     x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm,trainRef,testRef = [],[],[],[],[],[]
@@ -384,8 +382,6 @@ def make_windowed_data_noSplit(dataframe, config):
   
   x_winTrain, y_winTrain = get_windows_andShift_seq_hourly(dataSet_Full, winL, lookB,yDim,y_column)
 
-  print 'x_winTrain[101]', x_winTrain[101]
-
   x_tmp, y_tmp = [],[]
   for i in range(len(x_winTrain)):
     if x_winTrain[i,-1,1] != 18:
@@ -424,9 +420,6 @@ def make_windowed_data_noSplit(dataframe, config):
   y_winTrain_norm = np.reshape(np.array(y_winTrain_norm),(len(y_winTrain_norm),yDim ))
   x_winTest_norm =  np.reshape(np.array(x_winTest_norm) ,(len(x_winTest_norm) ,winL,xDim ))
   y_winTest_norm =  np.reshape(np.array(y_winTest_norm) ,(len(y_winTest_norm) ,yDim ))
-  
-  #print x_winTrain_norm[0]
-  #print x_winTest_norm[0]
   
   if config['normalise'] == '3':
     return x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm, np.array(trainRef), np.array(testRef)
