@@ -138,8 +138,8 @@ def build_model(params):
       activation = str(params['activationperlayer'][-1]),
       return_sequences=returnSequences,
       recurrent_activation = str(params['recurrentactivation'][-1]),
-      dropout=float(params['dropout'][i]),
-      recurrent_dropout=float(params['dropout'][i])
+      dropout=float(params['dropout'][-1]),
+      recurrent_dropout=float(params['dropout'][-1])
       )
     #,
     #merge_mode='ave'
@@ -150,6 +150,10 @@ def build_model(params):
     #model.add(Dropout(float(params['dropout'][-1])))
   
   else:
+    if str(params['timedistributed']) == 'on':
+      returnSequences = True
+    else:
+      returnSequences = False
     print params['neuronsperlayer']
     print int(params['inputdim'])
     print str(params['activationperlayer'])
@@ -162,8 +166,8 @@ def build_model(params):
       activation = str(params['activationperlayer']),
       return_sequences=returnSequences,
       recurrent_activation = str(params['recurrentactivation']),
-      dropout=float(params['dropout'][i]),
-      recurrent_dropout=float(params['dropout'][i])
+      dropout=float(params['dropout'][-1]),
+      recurrent_dropout=float(params['dropout'][-1])
       )
     )
     if str(params['batchnorm']) == 'on':

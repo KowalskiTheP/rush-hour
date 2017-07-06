@@ -301,8 +301,8 @@ def make_windowed_data_withSplit(dataframe, config):
 
   dataSetTrain, dataSetTest = split_data(dataSet_Full, float(config['traintestsplit']))
     
-  dataSetTrain = smoothing(dataSetTrain, config)
-  dataSetTest_smooth = smoothing(dataSetTest, config)
+  #dataSetTrain = smoothing(dataSetTrain, config)
+  #dataSetTest_smooth = smoothing(dataSetTest, config)
   
   x = np.arange(len(dataSetTest))
   #plt.plot(x,dataSetTest_smooth[:,y_column],color = 'red')
@@ -312,8 +312,8 @@ def make_windowed_data_withSplit(dataframe, config):
   x_winTrain, y_winTrain = get_windows_andShift_seq_hourly(dataSetTrain, winL, lookB,yDim,y_column)
   x_winTest, y_winTest = get_windows_andShift_seq_hourly(dataSetTest, winL, lookB,yDim,y_column)
   
-  x_winTest_smooth, y_winTest_smooth = get_windows_andShift_seq_hourly(dataSetTest_smooth, winL, lookB,yDim,y_column)
-  x_winTest = x_winTest_smooth
+  #x_winTest_smooth, y_winTest_smooth = get_windows_andShift_seq_hourly(dataSetTest_smooth, winL, lookB,yDim,y_column)
+  #x_winTest = x_winTest_smooth
   
   # Deleting evening to morning predictions
   if 0 == 0:
