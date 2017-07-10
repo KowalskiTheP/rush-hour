@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 np.set_printoptions(linewidth=150)
 import sys
+from keras.callbacks import EarlyStopping
 
 conf = readConf.readINI("../Data/config.conf")
 os.environ.TF_CPP_MIN_LOG_LEVEL = str(conf.loglevel)
@@ -40,6 +41,7 @@ if conf.tuning == 'on':
 else:
 
   model1 = model.build_model(conf)
+  earlyStopping = EarlyStopping(monitor='loss', min_delta=conf.earlystop, patience=10, verbose=2)
   model1.fit(x_winTrain, y_winTrain, int(conf.batchsize), int(conf.epochs))
   
 

@@ -76,17 +76,17 @@ def build_model(conf):
       
     if conf.verbosity < 2:
       print 'layer 0: ',conf.neuronsperlayer[0]
-    if conf.cnn == 'on':
-      #model.add(Bidirectional(LSTM(
+    if conf.bidirect == 'on':
       model.add(LSTM(
         conf.neuronsperlayer[0],
+        input_shape = (None, conf.inputdim),
         activation = conf.activationperlayer[0],
         return_sequences=True,
         recurrent_activation = conf.recurrentactivation[0],
         dropout=conf.dropout[0],
         recurrent_dropout=conf.dropout[0]
         )
-        #)
+      #)
       )
     else:
       model.add(LSTM(
@@ -108,18 +108,28 @@ def build_model(conf):
     for i in xrange(1,len(conf.neuronsperlayer)-1):
       if conf.verbosity < 2:
         print 'layer ', i, ':', conf.neuronsperlayer[i]
-      
-      #model.add(Bidirectional(LSTM(
-      model.add(LSTM(
-        conf.neuronsperlayer[i],
-        activation = conf.activationperlayer[i],
-        return_sequences=True,
-        recurrent_activation = conf.recurrentactivation[i],
-        dropout=conf.dropout[i],
-        recurrent_dropout=conf.dropout[i]
+      if conf.bidirect == 'on':
+        model.add(Bidirectional(LSTM(
+          conf.neuronsperlayer[i],
+          activation = conf.activationperlayer[i],
+          return_sequences=True,
+          recurrent_activation = conf.recurrentactivation[i],
+          dropout=conf.dropout[i],
+          recurrent_dropout=conf.dropout[i]
+          )
+          )
         )
-        #)
-      )
+      else:
+        model.add(LSTM(
+          conf.neuronsperlayer[i],
+          activation = conf.activationperlayer[i],
+          return_sequences=True,
+          recurrent_activation = conf.recurrentactivation[i],
+          dropout=conf.dropout[i],
+          recurrent_dropout=conf.dropout[i]
+          )
+        )
+      
       if conf.batchnorm == 'on':
         model.add(BatchNormalization())
   
@@ -132,19 +142,28 @@ def build_model(conf):
       returnSequences = False
     if conf.verbosity < 2:
       print 'last LSTM layer: ',conf.neuronsperlayer[-1]
-    #model.add(Bidirectional(LSTM(
-    model.add(LSTM(
-      conf.neuronsperlayer[-1],
-      activation = conf.activationperlayer[-1],
-      return_sequences=returnSequences,
-      recurrent_activation = conf.recurrentactivation[-1],
-      dropout=conf.dropout[-1],
-      recurrent_dropout=conf.dropout[-1]
+    if conf.bidirect == 'on':
+      model.add(Bidirectional(LSTM(
+        conf.neuronsperlayer[-1],
+        activation = conf.activationperlayer[-1],
+        return_sequences=returnSequences,
+        recurrent_activation = conf.recurrentactivation[-1],
+        dropout=conf.dropout[-1],
+        recurrent_dropout=conf.dropout[-1]
+        )
+        )
       )
-    #,
-    #merge_mode='ave'
-      #)
-    )
+    else:
+      model.add(LSTM(
+        conf.neuronsperlayer[-1],
+        activation = conf.activationperlayer[-1],
+        return_sequences=returnSequences,
+        recurrent_activation = conf.recurrentactivation[-1],
+        dropout=conf.dropout[-1],
+        recurrent_dropout=conf.dropout[-1]
+        )
+      )  
+      
     if conf.batchnorm == 'on':
       model.add(BatchNormalization())
     #model.add(Dropout(conf.dropout[-1]))
@@ -154,22 +173,37 @@ def build_model(conf):
       returnSequences = True
     else:
       returnSequences = False
-    print conf.neuronsperlayer
-    print conf.inputdim
-    print conf.activationperlayer
-    print conf.recurrentactivation
+    #print conf.neuronsperlayer
+    #print conf.inputdim
+    #print conf.activationperlayer
+    #print conf.recurrentactivation
     if conf.verbosity < 2:
       print 'layer 0: ',conf.neuronsperlayer
-    model.add(LSTM(
-      conf.neuronsperlayer,
-      input_shape = (None, conf.inputdim),
-      activation = conf.activationperlayer,
-      return_sequences=returnSequences,
-      recurrent_activation = conf.recurrentactivation,
-      dropout=conf.dropout[-1],
-      recurrent_dropout=conf.dropout[-1]
+    
+    if conf.bidirect == 'on':
+      model.add(Bidirectional(LSTM(
+        conf.neuronsperlayer,
+        input_shape = (None, conf.inputdim),
+        activation = conf.activationperlayer,
+        return_sequences=returnSequences,
+        recurrent_activation = conf.recurrentactivation,
+        dropout=conf.dropout[-1],
+        recurrent_dropout=conf.dropout[-1]
+        )
       )
-    )
+      )
+    else:
+      model.add(LSTM(
+        conf.neuronsperlayer,
+        input_shape = (None, conf.inputdim),
+        activation = conf.activationperlayer,
+        return_sequences=returnSequences,
+        recurrent_activation = conf.recurrentactivation,
+        dropout=conf.dropout[-1],
+        recurrent_dropout=conf.dropout[-1]
+        )
+      )
+      
     if conf.batchnorm == 'on':
       model.add(BatchNormalization())
 
@@ -181,8 +215,7 @@ def build_model(conf):
   if conf.timedistributed == 'on':
     model.add(TimeDistributed(Dense(
         #units=conf.outputdim,
-        #testing parameter
-        1,
+        units=1,
         activation = 'linear'
         )
       )
@@ -195,7 +228,7 @@ def build_model(conf):
     )
 
 
-  if conf.verbosity < 2:
+  if conf.verbosity >= 2:
     print '> Build time : ', time.time() - start
     model.summary()
 
