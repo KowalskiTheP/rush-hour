@@ -92,7 +92,7 @@ y_winTest = np.reshape(y_winTest,(len(y_winTest),yDim,1))
 y_winTrain = np.reshape(y_winTrain,(len(y_winTrain),yDim,1))
 
 if conf.timedistributed == 'on':
-  for i in range(int(conf.look_back)+int(conf.winlength)-1,0,-1):
+  for i in range(conf.look_back+conf.winlength-1,0,-1):
     diffTrain = np.sqrt((predTest[:,-i] - y_winTest[:,-i])**2)
     slopePred = (predTest[:,-i]-predTest[:,-i-1]) 
     slopeTest = (y_winTest[:,-i]-y_winTest[:,-i-1])
@@ -105,27 +105,34 @@ if conf.timedistributed == 'on':
     print 'Mean of pred.-true-diff ('+str(-i)+') :               ', np.mean(diffTrain)
     print 'Standard deviation of pred.-true-diff ('+str(-i)+') : ', np.std(diffTrain) ,'\n'
 else:
-  diffTrain = np.sqrt((predTest[:,-i] - y_winTest[:,-i])**2)
-  print 'Mean of pred.-true-diff:               ', np.mean(diffTrain)
-  print 'Standard deviation of pred.-true-diff: ', np.std(diffTrain)
-
-#y_winTrain = y_winTrain.flatten()
-#predTrain = predTrain.flatten()
+  y_winTrain = y_winTrain.flatten()
+  predTrain = predTrain.flatten()
+  y_winTest = y_winTest.flatten()
+  predTest = predTest.flatten()  
+  diffTrain = np.sqrt((predTest - y_winTest)**2)
+    
+  print 'MAE: ', np.mean(diffTrain)
+  print 'SD:  ', np.std(diffTrain)
 
 if conf.plotting == 'on':
-  model.plot_data(y_winTrain[:,-1], predTrain[:,-1])
-  model.plot_data(y_winTest[:,-1], predTest[:,-1])
-  model.plot_data(y_winTest[::4,-5:-1].flatten(), predTest[::4,-5:-1].flatten())
-  model.plot_data(y_winTest[-17,-5:-1], predTest[-17,-5:-1])
-  model.plot_data(y_winTest[-13,-5:-1], predTest[-13,-5:-1])
-  model.plot_data(y_winTest[-9,-5:-1], predTest[-9,-5:-1])
-  model.plot_data(y_winTest[-5,-5:-1], predTest[-5,-5:-1])
-  model.plot_data(y_winTest[-1,-5:-1], predTest[-1,-5:-1])
-  #model.plot_data(tmp_yTest, tmp_predTest)
-  #model.plot_data(tmp_yTest[-8:-1], tmp_predTest[-8:-1])
-  #model.plot_data(y_winTest.flatten(), predTest.flatten())
-  #model.plot_data(y_winTest[0:len(tmpPredList)], tmpPredList)
-  #model.plot_data(x_winTest_deN[-50:-1,-1,2], predTest[-50:-1])
+  if conf.timedistributed == 'on':
+    model.plot_data(y_winTrain[:,-1], predTrain[:,-1])
+    model.plot_data(y_winTest[:,-1], predTest[:,-1])
+    model.plot_data(y_winTest[::4,-5:-1].flatten(), predTest[::4,-5:-1].flatten())
+    model.plot_data(y_winTest[-17,-5:-1], predTest[-17,-5:-1])
+    model.plot_data(y_winTest[-13,-5:-1], predTest[-13,-5:-1])
+    model.plot_data(y_winTest[-9,-5:-1], predTest[-9,-5:-1])
+    model.plot_data(y_winTest[-5,-5:-1], predTest[-5,-5:-1])
+    model.plot_data(y_winTest[-1,-5:-1], predTest[-1,-5:-1])
+    #model.plot_data(tmp_yTest, tmp_predTest)
+    #model.plot_data(tmp_yTest[-8:-1], tmp_predTest[-8:-1])
+    #model.plot_data(y_winTest.flatten(), predTest.flatten())
+    #model.plot_data(y_winTest[0:len(tmpPredList)], tmpPredList)
+    #model.plot_data(x_winTest_deN[-50:-1,-1,2], predTest[-50:-1])
+  else:
+    model.plot_data(y_winTrain, predTrain)
+    model.plot_data(y_winTest, predTest)
+    model.plot_data(y_winTest[-20:-1], predTest[-20:-1])
 
   
 

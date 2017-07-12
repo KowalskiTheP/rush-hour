@@ -116,7 +116,7 @@ def get_windows_andShift_seq_hourly(x,winLength,look_back,outDim,y_column):
   x_train, y_train = [], []
   #Porbably important bugfix
   #Old: for i in xrange(0,len(x)-(winLength+outDim),2): 
-  for i in xrange(0,len(x)-(winLength+outDim),1):
+  for i in xrange(0,len(x)-(winLength+look_back+outDim),1):
     x_train.append(x[i:i+winLength])
     y_train.append(x[(i+winLength+look_back-1):(i+winLength+look_back+outDim-1),y_column])
   return np.array(x_train), np.reshape(np.array(y_train),(len(y_train),outDim))
@@ -154,7 +154,7 @@ def make_windowed_data_withSplit(dataframe, config):
   #dataSetTrain, dataSetTest = split_data(dataSet_Full, float(config.traintestsplit))
 
 #=========================================================================================
-# The rushian data is very dirty! If its cleaned up, only a few houndred days are left. Therefor its probably the best, if use it in its dirty original form. 
+# The russian data is very dirty! If its cleaned up, only a few hundred days are left. Therefore its probably the best, if we use it in its dirty original form. 
 #The following code was used to clean the data up.
   tmp, xdata = [], []
   stop = 0
@@ -178,12 +178,13 @@ def make_windowed_data_withSplit(dataframe, config):
   dataSetTrain = smoothing(dataSetTrain, config)
   dataSetTest_smooth = smoothing(dataSetTest, config)
   
+
   x_winTrain, y_winTrain = get_windows_andShift_seq_hourly(dataSetTrain, winL, lookB,yDim,y_column)
   x_winTest, y_winTest = get_windows_andShift_seq_hourly(dataSetTest, winL, lookB,yDim,y_column)
-  
+
   x_winTest_smooth, y_winTest_smooth = get_windows_andShift_seq_hourly(dataSetTest_smooth, winL, lookB,yDim,y_column)
   x_winTest = x_winTest_smooth
-  
+
   # Deleting evening to morning predictions
   if 0 == 0:
     x_tmp, y_tmp = [],[]
@@ -194,7 +195,7 @@ def make_windowed_data_withSplit(dataframe, config):
         y_tmp.append(y_winTrain[i])
     x_winTrain = np.array(x_tmp)
     y_winTrain = np.array(y_tmp)
-  
+
   x_tmp, y_tmp = [],[]
   for i in range(len(x_winTest)):
     #if x_winTest[i,-1,1] != 16 and x_winTest[i,-1,1] != 17:
@@ -225,7 +226,8 @@ def make_windowed_data_withSplit(dataframe, config):
     for j in range(len(y_winTest)):
       x_winTest_norm.append(  normalise_data_refValue(testMax[j]          ,x_winTest[j])  )
       y_winTest_norm.append(  normalise_data_refValue(testMax[j,y_column] ,y_winTest[j])  )
-      
+  
+
   x_winTrain_norm = np.reshape(np.array(x_winTrain_norm),(len(x_winTrain_norm),winL,xDim ))
   y_winTrain_norm = np.reshape(np.array(y_winTrain_norm),(len(y_winTrain_norm),yDim ))
   x_winTest_norm =  np.reshape(np.array(x_winTest_norm) ,(len(x_winTest_norm) ,winL,xDim ))
