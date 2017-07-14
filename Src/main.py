@@ -21,8 +21,11 @@ dataframe = loadData.load_fromCSV(conf.csvfile, '.', ',', int(conf.header), conf
 print '> Windowing data...'
 yDim = int(conf.outputdim)
 
+if conf.normalise == 0:
+    x_winTrain, y_winTrain, x_winTest, y_winTest = loadData.make_windowed_data_withSplit(dataframe,conf)
+
 if conf.normalise == 3:   
-    x_winTrain, y_winTrain, x_winTest, y_winTest,trainRef, testRef = loadData.make_windowed_data_withSplit(dataframe,conf)
+    x_winTrain, y_winTrain, x_winTest, y_winTest, trainRef, testRef = loadData.make_windowed_data_withSplit(dataframe,conf)
 if conf.normalise == 4:
     x_winTrain, y_winTrain, x_winTest, y_winTest,trainMax,trainMin,testMax,testMin = loadData.make_windowed_data_withSplit(dataframe,conf)
       

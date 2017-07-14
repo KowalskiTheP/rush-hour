@@ -196,14 +196,14 @@ def make_windowed_data_withSplit(dataframe, config):
     x_winTrain = np.array(x_tmp)
     y_winTrain = np.array(y_tmp)
 
-  x_tmp, y_tmp = [],[]
-  for i in range(len(x_winTest)):
-    #if x_winTest[i,-1,1] != 16 and x_winTest[i,-1,1] != 17:
-    if x_winTest[i,0,1] == 8. or x_winTest[i,0,1] == 9.:
-      x_tmp.append(x_winTest[i])
-      y_tmp.append(y_winTest[i])
-  x_winTest = np.array(x_tmp)
-  y_winTest = np.array(y_tmp)
+    x_tmp, y_tmp = [],[]
+    for i in range(len(x_winTest)):
+      #if x_winTest[i,-1,1] != 16 and x_winTest[i,-1,1] != 17:
+      if x_winTest[i,0,1] == 8. or x_winTest[i,0,1] == 9.:
+        x_tmp.append(x_winTest[i])
+        y_tmp.append(y_winTest[i])
+    x_winTest = np.array(x_tmp)
+    y_winTest = np.array(y_tmp)
   
   if config.normalise == 3:
     x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm,trainRef,testRef = [],[],[],[],[],[]
@@ -232,6 +232,9 @@ def make_windowed_data_withSplit(dataframe, config):
   y_winTrain_norm = np.reshape(np.array(y_winTrain_norm),(len(y_winTrain_norm),yDim ))
   x_winTest_norm =  np.reshape(np.array(x_winTest_norm) ,(len(x_winTest_norm) ,winL,xDim ))
   y_winTest_norm =  np.reshape(np.array(y_winTest_norm) ,(len(y_winTest_norm) ,yDim ))
+
+  if config.normalise == 0:
+    return x_winTrain, y_winTrain, x_winTest, y_winTest
 
   if config.normalise == 3:
     return x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm, np.array(trainRef), np.array(testRef)
