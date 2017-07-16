@@ -18,191 +18,228 @@ import scipy.stats as stats
 from tabulate import tabulate
 import copy
 
-def safe_model(model, jsonFile, modelFile):
+def safe_model(model, conf):
   # serialize model to JSON
   model_json = model.to_json()
-  with open(jsonFile, "w") as json_file:
+  with open(conf.jsonfile, "w") as json_file:
     json_file.write(model_json)
   # serialize weights to HDF5
-  model.save_weights(modelFile)
+  model.save_weights(conf.modelfile)
   print("Saved model to disk")
   
-def load_model(jsonFile, modelFile):
+def load_model(conf):
   # load json and create model
-  json_file = open(jsonFile, 'r')
+  json_file = open(conf.jsonfile, 'r')
   loaded_model_json = json_file.read()
   json_file.close()
   loaded_model = model_from_json(loaded_model_json)
   # load weights into new model
-  loaded_model.load_weights(modelFile)
-  loaded_model.compile(loss='mean_squared_error', optimizer='adam')
+  loaded_model.load_weights(conf.modelfile)
+  loaded_model.compile(loss=conf.loss, optimizer=conf.optimiser)
   print("Loaded and compiled model from disk")
   return loaded_model
 
 
-def build_model(params):
-  '''builds model that is specified in params'''
+def build_model(conf):
+  '''builds model that is specified in conf'''
   start = time.time()
-  if int(params['verbosity']) < 2:
+  if conf.verbosity < 2:
     print "building model"
   
   # build sequential model
   model = Sequential()
-  #print len(params['neuronsperlayer'])
-  #print params['neuronsperlayer']
-  if params['cnn'] == 'on':
+  #print len(conf.neuronsperlayer)
+  #print conf.neuronsperlayer
+  if conf.cnn == 'on':
     print 'huhu'
-    #model.add(Conv1D(filters=8, kernel_size=7, padding='causal',input_shape = (None,int(params['inputdim'])), activation='relu'))
-    model.add(TimeDistributed(Conv1D(filters=8, kernel_size=7, padding='causal', activation='relu'),input_shape = [None,int(params['winlength']), int(params['inputdim'])]))
-    #model.add(Conv1D(filters=32, kernel_size=3, padding='causal', activation='relu'))
-    #if str(params['batchnorm']) == 'on':
-    #  model.add(BatchNormalization())
-    #model.add((MaxPooling1D(pool_size=2)))
-    model.add(TimeDistributed(MaxPooling1D(pool_size=2)))
-    model.add(TimeDistributed(Flatten()))
-    #model.add(Conv1D(filters=4, kernel_size=1, padding='causal', activation='relu'))
-    ##model.add(Conv1D(filters=16, kernel_size=1, padding='causal', activation='relu'))
-    #if str(params['batchnorm']) == 'on':
-      #model.add(BatchNormalization())
-    #model.add(MaxPooling1D(pool_size=2))
-    #model.add(Conv1D(filters=20, kernel_size=3, padding='causal', activation='relu'))
-    #model.add(Conv1D(filters=50, kernel_size=3, padding='causal', activation='relu'))
-    #if str(params['batchnorm']) == 'on':
-      #model.add(BatchNormalization())
-    #model.add(MaxPooling1D(pool_size=2))
+    model.add(Conv1D(filters=32, kernel_size=7, padding='causal',input_shape = (None,conf.inputdim), activation='relu'))
+    #model.add(TimeDistributed(Conv1D(filters=8, kernel_size=7, padding='causal', activation='relu'),input_shape = [None,conf.winlength, conf.inputdim]))
+    model.add(Conv1D(filters=32, kernel_size=7, padding='causal', activation='relu'))
+    if conf.batchnorm == 'on':
+      model.add(BatchNormalization())
+    model.add((MaxPooling1D(pool_size=2)))
+    #model.add(TimeDistributed(MaxPooling1D(pool_size=2)))
+    #model.add(TimeDistributed(Flatten()))
+    model.add(Conv1D(filters=16, kernel_size=5, padding='causal', activation='relu'))
+    model.add(Conv1D(filters=16, kernel_size=5, padding='causal', activation='relu'))
+    if conf.batchnorm == 'on':
+      model.add(BatchNormalization())
+    model.add(MaxPooling1D(pool_size=2))
+    model.add(Conv1D(filters=8, kernel_size=3, padding='causal', activation='relu'))
+    model.add(Conv1D(filters=8, kernel_size=3, padding='causal', activation='relu'))
+    if conf.batchnorm == 'on':
+      model.add(BatchNormalization())
+    model.add(MaxPooling1D(pool_size=2))
   
   # first layer is special, gets build by hand
-  if isinstance(params['neuronsperlayer'], list):
+  if isinstance(conf.neuronsperlayer, list):
       
-    if int(params['verbosity']) < 2:
-      print 'layer 0: ',params['neuronsperlayer'][0]
-    if params['cnn'] == 'on':
-      #model.add(Bidirectional(LSTM(
+    if conf.verbosity < 2:
+      print 'layer 0: ',conf.neuronsperlayer[0]
+    if conf.bidirect == 'on':
       model.add(LSTM(
-        int(params['neuronsperlayer'][0]),
-        activation = str(params['activationperlayer'][0]),
+        conf.neuronsperlayer[0],
+        input_shape = (None, conf.inputdim),
+        activation = conf.activationperlayer[0],
         return_sequences=True,
-        recurrent_activation = str(params['recurrentactivation'][0]),
-        dropout=float(params['dropout'][0]),
-        recurrent_dropout=float(params['dropout'][0])
+        recurrent_activation = conf.recurrentactivation[0],
+        dropout=conf.dropout[0],
+        recurrent_dropout=conf.dropout[0]
         )
-        #)
+      #)
       )
     else:
       model.add(LSTM(
-        int(params['neuronsperlayer'][0]),
-        input_shape = (None, int(params['inputdim'])),
-        activation = str(params['activationperlayer'][0]),
+        conf.neuronsperlayer[0],
+        input_shape = (None, conf.inputdim),
+        activation = conf.activationperlayer[0],
         return_sequences=True,
-        recurrent_activation = str(params['recurrentactivation'][0]),
-        dropout=float(params['dropout'][0]),
-        recurrent_dropout=float(params['dropout'][0])
+        recurrent_activation = conf.recurrentactivation[0],
+        dropout=conf.dropout[0],
+        recurrent_dropout=conf.dropout[0]
         )
       )
-    if str(params['batchnorm']) == 'on':
+    if conf.batchnorm == 'on':
       model.add(BatchNormalization())
     
-    #model.add(Dropout(float(params['dropout'][0])))
+    #model.add(Dropout(conf.dropout[0]))
   
     # all interims layer get done by this for loop
-    for i in xrange(1,len(params['neuronsperlayer'])-1):
-      if int(params['verbosity']) < 2:
-        print 'layer ', i, ':', params['neuronsperlayer'][i]
-      
-      #model.add(Bidirectional(LSTM(
-      model.add(LSTM(
-        int(params['neuronsperlayer'][i]),
-        activation = str(params['activationperlayer'][i]),
-        return_sequences=True,
-        recurrent_activation = str(params['recurrentactivation'][i]),
-        dropout=float(params['dropout'][i]),
-        recurrent_dropout=float(params['dropout'][i])
+    for i in xrange(1,len(conf.neuronsperlayer)-1):
+      if conf.verbosity < 2:
+        print 'layer ', i, ':', conf.neuronsperlayer[i]
+      if conf.bidirect == 'on':
+        model.add(Bidirectional(LSTM(
+          conf.neuronsperlayer[i],
+          activation = conf.activationperlayer[i],
+          return_sequences=True,
+          recurrent_activation = conf.recurrentactivation[i],
+          dropout=conf.dropout[i],
+          recurrent_dropout=conf.dropout[i]
+          )
+          )
         )
-        #)
-      )
-      if str(params['batchnorm']) == 'on':
+      else:
+        model.add(LSTM(
+          conf.neuronsperlayer[i],
+          activation = conf.activationperlayer[i],
+          return_sequences=True,
+          recurrent_activation = conf.recurrentactivation[i],
+          dropout=conf.dropout[i],
+          recurrent_dropout=conf.dropout[i]
+          )
+        )
+      
+      if conf.batchnorm == 'on':
         model.add(BatchNormalization())
   
-      #model.add(Dropout(float(params['dropout'][i])))
+      #model.add(Dropout(conf.dropout[i]))
     
     #last LSTM layer is special because return_sequences=False
-    if str(params['timedistributed']) == 'on':
+    if conf.timedistributed == 'on':
       returnSequences = True
     else:
       returnSequences = False
-    if int(params['verbosity']) < 2:
-      print 'last LSTM layer: ',params['neuronsperlayer'][-1]
-    #model.add(Bidirectional(LSTM(
-    model.add(LSTM(
-      int(params['neuronsperlayer'][-1]),
-      activation = str(params['activationperlayer'][-1]),
-      return_sequences=returnSequences,
-      recurrent_activation = str(params['recurrentactivation'][-1]),
-      dropout=float(params['dropout'][i]),
-      recurrent_dropout=float(params['dropout'][i])
+    if conf.verbosity < 2:
+      print 'last LSTM layer: ',conf.neuronsperlayer[-1]
+    if conf.bidirect == 'on':
+      model.add(Bidirectional(LSTM(
+        conf.neuronsperlayer[-1],
+        activation = conf.activationperlayer[-1],
+        return_sequences=returnSequences,
+        recurrent_activation = conf.recurrentactivation[-1],
+        dropout=conf.dropout[-1],
+        recurrent_dropout=conf.dropout[-1]
+        )
+        )
       )
-    #,
-    #merge_mode='ave'
-      #)
-    )
-    if str(params['batchnorm']) == 'on':
+    else:
+      model.add(LSTM(
+        conf.neuronsperlayer[-1],
+        activation = conf.activationperlayer[-1],
+        return_sequences=returnSequences,
+        recurrent_activation = conf.recurrentactivation[-1],
+        dropout=conf.dropout[-1],
+        recurrent_dropout=conf.dropout[-1]
+        )
+      )  
+      
+    if conf.batchnorm == 'on':
       model.add(BatchNormalization())
-    #model.add(Dropout(float(params['dropout'][-1])))
+    #model.add(Dropout(conf.dropout[-1]))
   
   else:
-    print params['neuronsperlayer']
-    print int(params['inputdim'])
-    print str(params['activationperlayer'])
-    print str(params['recurrentactivation'])
-    if int(params['verbosity']) < 2:
-      print 'layer 0: ',params['neuronsperlayer']
-    model.add(LSTM(
-      int(params['neuronsperlayer']),
-      input_shape = (None, int(params['inputdim'])),
-      activation = str(params['activationperlayer']),
-      return_sequences=returnSequences,
-      recurrent_activation = str(params['recurrentactivation']),
-      dropout=float(params['dropout'][i]),
-      recurrent_dropout=float(params['dropout'][i])
+    if conf.timedistributed == 'on':
+      returnSequences = True
+    else:
+      returnSequences = False
+    #print conf.neuronsperlayer
+    #print conf.inputdim
+    #print conf.activationperlayer
+    #print conf.recurrentactivation
+    if conf.verbosity < 2:
+      print 'layer 0: ',conf.neuronsperlayer
+    
+    if conf.bidirect == 'on':
+      model.add(Bidirectional(LSTM(
+        conf.neuronsperlayer,
+        input_shape = (None, conf.inputdim),
+        activation = conf.activationperlayer,
+        return_sequences=returnSequences,
+        recurrent_activation = conf.recurrentactivation,
+        dropout=conf.dropout[-1],
+        recurrent_dropout=conf.dropout[-1]
+        )
       )
-    )
-    if str(params['batchnorm']) == 'on':
+      )
+    else:
+      model.add(LSTM(
+        conf.neuronsperlayer,
+        input_shape = (None, conf.inputdim),
+        activation = conf.activationperlayer,
+        return_sequences=returnSequences,
+        recurrent_activation = conf.recurrentactivation,
+        dropout=conf.dropout[-1],
+        recurrent_dropout=conf.dropout[-1]
+        )
+      )
+      
+    if conf.batchnorm == 'on':
       model.add(BatchNormalization())
 
-    #model.add(Dropout(float(params['dropout'][0])))
+    #model.add(Dropout(conf.dropout[0]))
 
   #last layer is dense
-  if int(params['verbosity']) < 2:
-    print 'last layer (dense): ',params['outputdim']
-  if str(params['timedistributed']) == 'on':
+  if conf.verbosity < 2:
+    print 'last layer (dense): ',conf.outputdim
+  if conf.timedistributed == 'on':
     model.add(TimeDistributed(Dense(
-        #units=int(params['outputdim']),
-        #testing parameter
-        1,
+        #units=conf.outputdim,
+        units=1,
         activation = 'linear'
         )
       )
     )
   else:
     model.add(Dense(
-        units=int(params['outputdim']),
+        units=conf.outputdim,
         activation = 'linear'
       )
     )
 
 
-  if int(params['verbosity']) < 2:
+  if conf.verbosity >= 2:
     print '> Build time : ', time.time() - start
     model.summary()
 
   start = time.time()
-  if params['optimiser'] == 'adam':
-      opt = Adam(lr = float(params['learningrate']),
-                 decay=float(params['decay']),
+  if conf.optimiser == 'adam':
+      opt = Adam(lr = conf.learningrate,
+                 decay=conf.decay,
                  )
-  model.compile(loss=params['loss'], optimizer=opt)
+  model.compile(loss=conf.loss, optimizer=opt)
   
-  if int(params['verbosity']) < 2:
+  if conf.verbosity < 2:
     print '> Compilation Time : ', time.time() - start
   return model
 
@@ -237,7 +274,7 @@ def eval_model(test_x, test_y, trainedModel, config, tableHeader):
   '''calculate some core metrics for model evaluation'''
   
   test_y_shape = test_y.shape
-  score = trainedModel.evaluate(test_x, test_y, batch_size=int(config['batchsize']))
+  score = trainedModel.evaluate(test_x, test_y, batch_size=int(config.batchsize))
   pred = predict_point_by_point(trainedModel, test_x)
   test_y = test_y.flatten()
   rp, rp_P = stats.pearsonr(pred,test_y)
@@ -245,43 +282,43 @@ def eval_model(test_x, test_y, trainedModel, config, tableHeader):
   sd = np.std(pred-test_y)
   print '------', tableHeader, '------'
   print tabulate({"metric": ['test loss', 'Rp', 'Rs', 'SD'],"model": [score, rp, rs, sd]}, headers="keys", tablefmt="orgtbl")
-  np.savetxt(config['predictionfile'], np.column_stack((pred, test_y)), delimiter=' ')
+  np.savetxt(config.predictionfile, np.column_stack((pred, test_y)), delimiter=' ')
   
   return pred
     
 ###############################################
 
-def get_random_hyperparameterset(config):
+def get_random_hyperparameterset(conf):
   '''draws a random hyperparameter set when called'''
   #np.random.seed(seed=int(time.time()))
-  config1 = copy.deepcopy(config)
+  config1 = copy.deepcopy(conf)
   params = {}
   
   
-  if isinstance(config1['nlayer_tune'], list) is True:
-    params['nlayer_tune'] = int(config1['nlayer_tune'][np.random.random_integers(0,len(config1['nlayer_tune'])-1)])
+  if isinstance(config1.nlayer_tune, list) is True:
+    params['nlayer_tune'] = int(config1.nlayer_tune[np.random.random_integers(0,len(config1.nlayer_tune)-1)])
   else:
-    params['nlayer_tune'] = int(config1['nlayer_tune'])
+    params['nlayer_tune'] = int(config1.nlayer_tune)
   
-  if isinstance(config1['actlayer_tune'], list) is True:
-    params['actlayer_tune'] = str(config1['actlayer_tune'][np.random.random_integers(0,len(config1['actlayer_tune'])-1)])
+  if isinstance(config1.actlayer_tune, list) is True:
+    params['actlayer_tune'] = str(config1.actlayer_tune[np.random.random_integers(0,len(config1.actlayer_tune)-1)])
   else:
-    params['actlayer_tune'] = str(config1['actlayer_tune'])
+    params['actlayer_tune'] = str(config1.actlayer_tune)
   
-  if isinstance(config1['nhiduplayer_tune'], list) is True:
-    params['nhiduplayer_tune'] = int(config1['nhiduplayer_tune'][np.random.random_integers(0,len(config1['nhiduplayer_tune'])-1)])
+  if isinstance(config1.nhiduplayer_tune, list) is True:
+    params['nhiduplayer_tune'] = int(config1.nhiduplayer_tune[np.random.random_integers(0,len(config1.nhiduplayer_tune)-1)])
   else:
-    params['nhiduplayer_tune'] = int(config1['nhiduplayer_tune'])
+    params['nhiduplayer_tune'] = int(config1.nhiduplayer_tune)
   
-  if isinstance(config1['dropout_tune'], list) is True:
-    params['dropout_tune'] = float(config1['dropout_tune'][np.random.random_integers(0,len(config1['dropout_tune'])-1)])
+  if isinstance(config1.dropout_tune, list) is True:
+    params['dropout_tune'] = float(config1.dropout_tune[np.random.random_integers(0,len(config1.dropout_tune)-1)])
   else:
-    params['dropout_tune'] = float(config1['dropout_tune'])
+    params['dropout_tune'] = float(config1.dropout_tune)
 
-  if isinstance(config1['recactlayer_tune'], list) is True:
-    params['recactlayer_tune'] = str(config1['recactlayer_tune'][np.random.random_integers(0,len(config1['recactlayer_tune'])-1)])
+  if isinstance(config1.recactlayer_tune, list) is True:
+    params['recactlayer_tune'] = str(config1.recactlayer_tune[np.random.random_integers(0,len(config1.recactlayer_tune)-1)])
   else:
-    params['recactlayer_tune'] = str(config1['recactlayer_tune'])
+    params['recactlayer_tune'] = str(config1.recactlayer_tune)
   
   temp = []
   temp1 = []
@@ -294,20 +331,20 @@ def get_random_hyperparameterset(config):
     temp2.append(params['dropout_tune'])
     temp3.append(params['recactlayer_tune'])
   
-  config1['neuronsperlayer'] = temp1
-  config1['activationperlayer'] = temp
-  config1['dropout'] = temp2
-  config1['recurrentactivation'] = temp3
-  config1['learningrate'] = float(config1['lr_tune'][np.random.random_integers(0,len(config1['lr_tune'])-1)])
-  config1['batchsize'] = int(config1['batchsize_tune'][np.random.random_integers(0,len(config1['batchsize_tune'])-1)])
-  config1['batchnorm'] = str(config1['batchnorm_tune'][np.random.random_integers(0,len(config1['batchnorm_tune'])-1)])
+  config1.neuronsperlayer = temp1
+  config1.activationperlayer = temp
+  config1.dropout = temp2
+  config1.recurrentactivation = temp3
+  config1.learningrate = float(config1.lr_tune[np.random.random_integers(0,len(config1.lr_tune)-1)])
+  config1.batchsize = int(config1.batchsize_tune[np.random.random_integers(0,len(config1.batchsize_tune)-1)])
+  config1.batchnorm = str(config1.batchnorm_tune[np.random.random_integers(0,len(config1.batchnorm_tune)-1)])
   
-  #print config1['neuronsperlayer']
-  #print config1['activationperlayer']
-  #print config1['dropout']
-  #print config1['learningrate']
-  #print config1['batchsize']
-  #print config1['batchnorm']
+  #print config1.neuronsperlayer
+  #print config1.activationperlayer
+  #print config1.dropout
+  #print config1.learningrate
+  #print config1.batchsize
+  #print config1.batchnorm
   
   return config1
 
@@ -315,28 +352,28 @@ def get_random_hyperparameterset(config):
 
 def run_nn(epochs, temp_config, X_train, Y_train):
   '''builds and the runs the specified model, after that it returns the last loss'''
-  #print temp_config['neuronsperlayer']
+  #print temp_config.neuronsperlayer
   model = build_model(temp_config)
   
   print '*****'
-  print temp_config['neuronsperlayer']
-  print temp_config['activationperlayer']
-  print temp_config['dropout']
+  print temp_config.neuronsperlayer
+  print temp_config.activationperlayer
+  print temp_config.dropout
   print '*****'
   
-  hist = model.fit(X_train, Y_train, epochs=epochs, batch_size=int(temp_config['batchsize']), verbose=0)
+  hist = model.fit(X_train, Y_train, epochs=epochs, batch_size=int(temp_config.batchsize), verbose=0)
   
-  last_loss = hist.history['loss'][-1]
+  last_loss = hist.history.loss[-1]
   
   return last_loss
 
 ###############################################
 
-def write_params(params, filename):
+def write_params(conf, filename):
   '''writes the dictionary defined in params to a file'''
   
   with open(filename, 'w') as f:
-    for key, value in params.items():
+    for key, value in conf.items():
       f.write('%s: %s\n' % (key, value))
       
 ###############################################
@@ -384,7 +421,7 @@ def hypertune(X_train, Y_train, config):
     print history_list
   
   
-  filename = str(config['bestparams'])
+  filename = str(config.bestparams)
   write_params(T[0], filename)
   print np.argsort(val_losses)[0:int( n_i/eta )]
   print history_list
