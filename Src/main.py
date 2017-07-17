@@ -19,7 +19,7 @@ print '> Loading data... '
 dataframe = loadData.load_fromCSV(conf.csvfile, '.', ',', int(conf.header), conf.datecolumn)
   
 print '> Windowing data...'
-yDim = int(conf.outputdim)
+yLen = int(conf.outputlength)
 
 if conf.normalise == 0:
     x_winTrain, y_winTrain, x_winTest, y_winTest = loadData.make_windowed_data_withSplit(dataframe,conf)
@@ -30,8 +30,11 @@ if conf.normalise == 4:
     x_winTrain, y_winTrain, x_winTest, y_winTest,trainMax,trainMin,testMax,testMin = loadData.make_windowed_data_withSplit(dataframe,conf)
       
 if conf.timedistributed == 'on':
-    y_winTrain = np.reshape(y_winTrain, (len(y_winTrain), yDim, 1))
-    y_winTest  = np.reshape(y_winTest, (len(y_winTest), yDim, 1))
+    y_winTrain = np.reshape(y_winTrain, (len(y_winTrain), yLen, 1))
+    y_winTest  = np.reshape(y_winTest, (len(y_winTest), yLen, 1))
+
+print 'x_winTrain',x_winTrain[0]
+print 'y_winTrain',y_winTrain[0]
 
 print '> Data loaded! This took: ', time.time() - loadData_start_time, 'seconds'
 
@@ -89,10 +92,10 @@ else:
       
 winL = int(conf.winlength)
 
-predTest = np.reshape(predTest,(len(y_winTest),yDim,1))
-predTrain = np.reshape(predTrain,(len(y_winTrain),yDim,1))
-y_winTest = np.reshape(y_winTest,(len(y_winTest),yDim,1))
-y_winTrain = np.reshape(y_winTrain,(len(y_winTrain),yDim,1))
+predTest = np.reshape(predTest,(len(y_winTest),yLen,1))
+predTrain = np.reshape(predTrain,(len(y_winTrain),yLen,1))
+y_winTest = np.reshape(y_winTest,(len(y_winTest),yLen,1))
+y_winTrain = np.reshape(y_winTrain,(len(y_winTrain),yLen,1))
 
 if conf.timedistributed == 'on':
   for i in range(conf.look_back+conf.winlength-1,0,-1):
