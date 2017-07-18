@@ -47,24 +47,8 @@ else:
   earlyStopping = EarlyStopping(monitor='loss', min_delta=conf.earlystop, patience=10, verbose=2)
   model1.fit(x_winTrain, y_winTrain, int(conf.batchsize), int(conf.epochs))
   
-<<<<<<< HEAD
-  # build the specified model
-  model1 = model.build_model(config)
-  
-  # train the model
-  print 'x_winTrain shape:', np.shape(x_winTrain)
-  print 'y_winTrain shape:', np.shape(y_winTrain)
-  model1.fit(x_winTrain, y_winTrain, int(config['batchsize']), int(config['epochs']))
-  
-  jsonFile = str(config['jsonfile'])
-  modelFile = str(config['modelfile'])
-  model.safe_model(model1, jsonFile, modelFile)
-  loaded_model = model.load_model(jsonFile, modelFile)
-=======
-
   model.safe_model(model1, conf)
   loaded_model = model.load_model(conf)
->>>>>>> e2f1441df07c520f5728c311205cfa8319b810f8
 
   # simple predictions or eval metrics
   #y_winTest = y_winTest.flatten()

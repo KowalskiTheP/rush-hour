@@ -11,6 +11,7 @@ from keras.layers.convolutional import Conv1D
 from keras.layers.convolutional import MaxPooling1D
 from keras.layers.normalization import BatchNormalization
 from keras.layers import TimeDistributed
+from keras import backend as K
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -39,6 +40,13 @@ def load_model(conf):
   print("Loaded and compiled model from disk")
   return loaded_model
 
+def stock_loss(y_true, y_pred):
+  alpha = 10.
+  loss = K.switch(K.less(y_true * y_pred, 0),
+                  alpha*y_pred**2 - K.sign(y_true)*y_pred + K.abs(y_true),
+                  K.abs(y_true - y_pred)
+        )
+  return K.mean(loss, axis=-1)
 
 def build_model(conf):
   '''builds model that is specified in conf'''
@@ -73,9 +81,16 @@ def build_model(conf):
   
   # first layer is special, gets build by hand
   if isinstance(conf.neuronsperlayer, list):
-      
     if conf.verbosity < 2:
       print 'layer 0: ',conf.neuronsperlayer[0]
+    if conf.attention == 'on':
+      inputs = Input(shape = (conf.inputdim,))
+      attention = Dense(conf.inputdim,
+                  activation='softmax',
+                  name ='attention'
+                  )(inputs)
+      attention_mul = merge([inputs, attention_probs], output_shape=conf.inputdim, name='attention_mul', mode='mul')
+
     if conf.bidirect == 'on':
       model.add(LSTM(
         conf.neuronsperlayer[0],
@@ -101,9 +116,10 @@ def build_model(conf):
       )
     if conf.batchnorm == 'on':
       model.add(BatchNormalization())
-    
+
+
     #model.add(Dropout(conf.dropout[0]))
-  
+
     # all interims layer get done by this for loop
     for i in xrange(1,len(conf.neuronsperlayer)-1):
       if conf.verbosity < 2:
@@ -237,8 +253,11 @@ def build_model(conf):
       opt = Adam(lr = conf.learningrate,
                  decay=conf.decay,
                  )
-  model.compile(loss=conf.loss, optimizer=opt)
-  
+  if conf.loss == 'stock_loss':
+    model.compile(loss=stock_loss, optimizer=opt)
+  else:
+    model.compile(loss=conf.loss, optimizer=opt)
+
   if conf.verbosity < 2:
     print '> Compilation Time : ', time.time() - start
   return model
