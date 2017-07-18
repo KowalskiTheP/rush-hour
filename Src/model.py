@@ -55,12 +55,10 @@ def build_model(conf):
   start=time.time()
   if conf.verbosity < 2:
     print "building model"
-  
-  # build sequential model
+
+
   inputs=Input(shape=(None,conf.inputdim,))
-  #model=Sequential()
-  #print len(conf.neuronsperlayer)
-  #print conf.neuronsperlayer
+
   if conf.cnn == 'on':
     print 'huhu'
     cnn=Conv1D(filters=32, kernel_size=7, padding='causal',input_shape=(None,conf.inputdim), activation='relu')(inputs)
@@ -79,24 +77,6 @@ def build_model(conf):
     if conf.batchnorm == 'on':
       cnn=BatchNormalization()(cnn)
 
-    #model.add(Conv1D(filters=32, kernel_size=7, padding='causal',input_shape=(None,conf.inputdim), activation='relu'))
-    #model.add(TimeDistributed(Conv1D(filters=8, kernel_size=7, padding='causal', activation='relu'),input_shape=[None,conf.winlength, conf.inputdim]))
-    #model.add(Conv1D(filters=32, kernel_size=7, padding='causal', activation='relu'))
-    #if conf.batchnorm == 'on':
-    #  model.add(BatchNormalization())
-    #model.add((MaxPooling1D(pool_size=2)))
-    #model.add(TimeDistributed(MaxPooling1D(pool_size=2)))
-    #model.add(TimeDistributed(Flatten()))
-    #model.add(Conv1D(filters=16, kernel_size=5, padding='causal', activation='relu'))
-    #model.add(Conv1D(filters=16, kernel_size=5, padding='causal', activation='relu'))
-    #if conf.batchnorm == 'on':
-    #  model.add(BatchNormalization())
-    #model.add(MaxPooling1D(pool_size=2))
-    #model.add(Conv1D(filters=8, kernel_size=3, padding='causal', activation='relu'))
-    #model.add(Conv1D(filters=8, kernel_size=3, padding='causal', activation='relu'))
-    #if conf.batchnorm == 'on':
-    #  model.add(BatchNormalization())
-    #model.add(MaxPooling1D(pool_size=2))
   if conf.timedistributed == 'on':
     print 'timedistributed on'
     returnSequences=True
@@ -245,8 +225,8 @@ def build_model(conf):
   start=time.time()
   if conf.optimiser == 'adam':
       opt=Adam(lr=conf.learningrate,
-                 decay=conf.decay,
-                 )
+               decay=conf.decay)
+
   if conf.loss == 'stock_loss':
     model.compile(loss=stock_loss, optimizer=opt)
   else:
