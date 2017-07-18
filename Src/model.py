@@ -227,10 +227,10 @@ def build_model(conf):
 
   #last layer is dense
   if conf.verbosity < 2:
-    print 'last layer (dense): ',conf.outputdim
+    print 'last layer (dense): ',conf.outputlength
   if conf.timedistributed == 'on':
     model.add(TimeDistributed(Dense(
-        #units=conf.outputdim,
+        #units=conf.outputlength,
         units=1,
         activation = 'linear'
         )
@@ -238,7 +238,7 @@ def build_model(conf):
     )
   else:
     model.add(Dense(
-        units=conf.outputdim,
+        units=conf.outputlength,
         activation = 'linear'
       )
     )

@@ -110,7 +110,7 @@ df_dow = pd.read_csv('../Data/dj-preStage.csv', decimal='.' ,sep=',', header=0)
 #df_combi = pd.merge(left=df_dax, right=df_nikkei, on='days')
 #df_combi = pd.merge(left=df_combi, right=df_dowJones, on='days')
 
-df_dow = df_dow.loc[:,['days','<TIME>','<OPEN>','<CLOSE>']]
+df_dow = df_dow.loc[:,['days','<TIME>','<OPEN>','<CLOSE>','<HIGH>','<LOW>']]
 
 df_dow = df_dow.reset_index(drop=True)
 
@@ -133,7 +133,7 @@ df_dow = df_dow.reset_index(drop=True)
 #=================================
 
 # instead:
-df_combi = df_dow.loc[:,['days','<TIME>','<OPEN>']]
+df_combi = df_dow.loc[:,['days','<TIME>','<OPEN>','<HIGH>','<LOW>']]
 
 #df_nikkei = df_combi.loc[:,['days','Open_y','High_y','Low_y','Close_y']]
 #df_dowJones = df_combi.loc[:,['days','Open','High','Low','Close']]
