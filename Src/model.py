@@ -5,7 +5,7 @@ from keras.models import Sequential
 from keras.models import model_from_json
 from keras.layers import Dense
 from keras.layers import LSTM
-from keras.layers.core import Flatten
+from keras.layers.core import *
 from keras.layers.wrappers import Bidirectional
 from keras.optimizers import Adam
 from keras.layers import Dropout
@@ -60,20 +60,20 @@ def build_model(conf):
   inputs=Input(shape=(None,conf.inputdim,))
 
   if conf.cnn == 'on':
-    print 'huhu'
-    cnn=Conv1D(filters=32, kernel_size=7, padding='causal',input_shape=(None,conf.inputdim), activation='relu')(inputs)
-    cnn=Conv1D(filters=32, kernel_size=7, padding='causal', activation='relu')(cnn)
-    cnn=MaxPooling1D(pool_size=2)(cnn)
+    print 'cnn on'
+    cnn=Conv1D(filters=32, kernel_size=7, padding='causal',input_shape=(None,conf.inputdim), activation='relu', name='cnn1_1')(inputs)
+    cnn=Conv1D(filters=32, kernel_size=7, padding='causal', activation='relu', name='cnn1_2')(cnn)
+    cnn=MaxPooling1D(pool_size=2, name='max_pool1')(cnn)
     if conf.batchnorm == 'on':
       cnn=BatchNormalization()(cnn)
-    cnn=Conv1D(filters=16, kernel_size=5, padding='causal', activation='relu')(cnn)
-    cnn=Conv1D(filters=16, kernel_size=5, padding='causal', activation='relu')(cnn)
-    cnn=MaxPooling1D(pool_size=2)(cnn)
+    cnn=Conv1D(filters=16, kernel_size=5, padding='causal', activation='relu', name='cnn2_1')(cnn)
+    cnn=Conv1D(filters=16, kernel_size=5, padding='causal', activation='relu', name='cnn2_2')(cnn)
+    cnn=MaxPooling1D(pool_size=2, name='max_pool2')(cnn)
     if conf.batchnorm == 'on':
       cnn=BatchNormalization()(cnn)
-    cnn=Conv1D(filters=8, kernel_size=3, padding='causal', activation='relu')(cnn)
-    cnn=Conv1D(filters=8, kernel_size=3, padding='causal', activation='relu')(cnn)
-    cnn=MaxPooling1D(pool_size=2)(cnn)
+    cnn=Conv1D(filters=8, kernel_size=3, padding='causal', activation='relu', name='cnn3_1')(cnn)
+    cnn=Conv1D(filters=8, kernel_size=3, padding='causal', activation='relu', name='cnn3_2')(cnn)
+    cnn=MaxPooling1D(pool_size=2, name='max_pool3')(cnn)
     if conf.batchnorm == 'on':
       cnn=BatchNormalization()(cnn)
 
@@ -100,7 +100,7 @@ def build_model(conf):
                                    dropout=conf.dropout[0],
                                    recurrent_dropout=conf.dropout[0]))(cnn)
       else:
-        print 'bidirect is off'
+        print 'bidirect off'
         lstm_encode=LSTM(conf.neuronsperlayer[0],
                          activation=conf.activationperlayer[0],
                          return_sequences=True,
@@ -147,6 +147,13 @@ def build_model(conf):
                            recurrent_activation=conf.recurrentactivation[i],
                            dropout=conf.dropout[i],
                            recurrent_dropout=conf.dropout[i])(lstm_encode)
+    if conf.attention == 'on':
+      attention=Permute((2,1))(lstm_encode)
+      attention=Reshape(conf.inputdim,conf.winlength)(attention)
+      # maybe a timedistributed dense layer with 1 neuron should also do the trick?
+      attention=Dense(conf.winlength, activation='softmax')(attention)
+      attention_probability=Permute((2,1))(attention)
+      lstm_encode=merge([lstm_encode, attention_probability], mode='mul')
 
     if conf.bidirect == 'on':
       print 'bidirect on'
@@ -223,10 +230,11 @@ def build_model(conf):
     model.summary()
 
   start=time.time()
+  #!!!!!!!!implement learning Rate scheduler!!!!!!!!
   if conf.optimiser == 'adam':
       opt=Adam(lr=conf.learningrate,
                decay=conf.decay)
-
+  #!!!!!!!!implement working custom loss!!!!!!!!
   if conf.loss == 'stock_loss':
     model.compile(loss=stock_loss, optimizer=opt)
   else:

@@ -48,7 +48,7 @@ else:
 
   model1 = model.build_model(conf)
   earlyStopping = EarlyStopping(monitor='loss', min_delta=conf.earlystop, patience=10, verbose=2)
-  model1.fit(x_winTrain, y_winTrain, int(conf.batchsize), int(conf.epochs))
+  model1.fit(x_winTrain, y_winTrain, conf.batchsize, conf.epochs)
   
   model.safe_model(model1, conf)
   loaded_model = model.load_model(conf)
