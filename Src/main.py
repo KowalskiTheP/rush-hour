@@ -11,13 +11,13 @@ from keras.callbacks import EarlyStopping
 
 conf = readConf.readINI("../Data/config.conf")
 os.environ.TF_CPP_MIN_LOG_LEVEL = str(conf.loglevel)
-  
+
 global_start_time = time.time()
 loadData_start_time = time.time()
 print '> Loading data... '
 #dataframe = loadData.load_fromCSV(conf.csvfile, ',', ';', int(conf.header), conf.datecolumn)
 dataframe = loadData.load_fromCSV(conf.csvfile, '.', ',', int(conf.header), conf.datecolumn)
-  
+
 print '> Windowing data...'
 yLen = int(conf.outputlength)
 
@@ -28,7 +28,7 @@ if conf.normalise == 3:
     x_winTrain, y_winTrain, x_winTest, y_winTest, trainRef, testRef = loadData.make_windowed_data_withSplit(dataframe,conf)
 if conf.normalise == 4:
     x_winTrain, y_winTrain, x_winTest, y_winTest,trainMax,trainMin,testMax,testMin = loadData.make_windowed_data_withSplit(dataframe,conf)
-      
+
 if conf.timedistributed == 'on':
     y_winTrain = np.reshape(y_winTrain, (len(y_winTrain), yLen, 1))
     y_winTest  = np.reshape(y_winTest, (len(y_winTest), yLen, 1))
@@ -39,7 +39,7 @@ print 'y_winTrain',y_winTrain[0]
 print '> Data loaded! This took: ', time.time() - loadData_start_time, 'seconds'
 
 if conf.tuning == 'on':
-  
+
   #conf = model.get_random_hyperparameterset(conf)
   model.hypertune(x_winTrain, y_winTrain, conf)
   sys.exit()
@@ -49,7 +49,7 @@ else:
   model1 = model.build_model(conf)
   earlyStopping = EarlyStopping(monitor='loss', min_delta=conf.earlystop, patience=10, verbose=2)
   model1.fit(x_winTrain, y_winTrain, conf.batchsize, conf.epochs)
-  
+
   model.safe_model(model1, conf)
   loaded_model = model.load_model(conf)
 
@@ -64,10 +64,10 @@ else:
     predTest = model.predict_point_by_point(loaded_model, x_winTest)
     predTrain = model.predict_point_by_point(loaded_model, x_winTrain)
     print np.column_stack((pred, y_winTest))
-  
+
   predTrain = np.reshape(predTrain,y_winTrain.shape)
   predTest = np.reshape(predTest,y_winTest.shape)
-    
+
   if conf.normalise == 3:
     y_column = int(conf.y_column)
     for i in range(len(testRef)):
@@ -77,7 +77,7 @@ else:
     for i in range(len(trainRef)):
       y_winTrain[i] = trainRef[i,y_column]*y_winTrain[i]
       predTrain[i] = trainRef[i,y_column]*predTrain[i]
-    
+
   if conf.normalise == 4:
     x_winTest_deN = np.copy(x_winTest)
     y_column = int(conf.y_column)
@@ -88,7 +88,7 @@ else:
     for i in range(len(trainMax)):
       y_winTrain[i] = trainMax[i,y_column]*y_winTrain[i] + trainMin[i,y_column]
       predTrain[i] = trainMax[i,y_column]*predTrain[i] + trainMin[i,y_column]
-      
+
 winL = int(conf.winlength)
 
 predTest = np.reshape(predTest,(len(y_winTest),yLen,1))
@@ -105,7 +105,7 @@ if conf.timedistributed == 'on':
     for k in range(len(slopePred)):
       if np.sign(slopePred[k]) == np.sign(slopeTest[k]):
         rightSign = rightSign + 1
-    
+
     print 'Correct Trends [%]: ',  rightSign / float(len(slopePred))
     print 'Mean of pred.-true-diff ('+str(-i)+') :               ', np.mean(diffTrain)
     print 'Standard deviation of pred.-true-diff ('+str(-i)+') : ', np.std(diffTrain) ,'\n'
@@ -115,7 +115,7 @@ else:
   y_winTest = y_winTest.flatten()
   predTest = predTest.flatten()  
   diffTrain = np.sqrt((predTest - y_winTest)**2)
-    
+
   print 'MAE: ', np.mean(diffTrain)
   print 'SD:  ', np.std(diffTrain)
 
@@ -139,7 +139,7 @@ if conf.plotting == 'on':
     model.plot_data(y_winTest, predTest)
     model.plot_data(y_winTest[-20:-1], predTest[-20:-1])
 
-  
+
 
 
 

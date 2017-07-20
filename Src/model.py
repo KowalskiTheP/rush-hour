@@ -5,6 +5,7 @@ from keras.models import Sequential
 from keras.models import model_from_json
 from keras.layers import Dense
 from keras.layers import LSTM
+from keras keras.layers.merge import Multiply
 from keras.layers.core import *
 from keras.layers.wrappers import Bidirectional
 from keras.optimizers import Adam
@@ -57,7 +58,7 @@ def build_model(conf):
     print "building model"
 
 
-  inputs=Input(shape=(None,conf.inputdim,))
+  inputs=Input(shape=(conf.winlength,conf.inputdim,))
 
   if conf.cnn == 'on':
     print 'cnn on'
@@ -148,12 +149,17 @@ def build_model(conf):
                            dropout=conf.dropout[i],
                            recurrent_dropout=conf.dropout[i])(lstm_encode)
     if conf.attention == 'on':
+      print 'attention on'
+      num_hidden=int(lstm_encode.shape[2])
       attention=Permute((2,1))(lstm_encode)
-      attention=Reshape(conf.inputdim,conf.winlength)(attention)
-      # maybe a timedistributed dense layer with 1 neuron should also do the trick?
+      # not sure if the reshape is necessary? (FM)
+      attention=Reshape((num_hidden,-1))(attention)
+      # maybe a timedistributed dense layer with 1 neuron should also do the trick? (FM)
       attention=Dense(conf.winlength, activation='softmax')(attention)
       attention_probability=Permute((2,1))(attention)
-      lstm_encode=merge([lstm_encode, attention_probability], mode='mul')
+      lstm_encode=Multiply([lstm_encode, attention_probability])
+    else:
+      print 'attention off'
 
     if conf.bidirect == 'on':
       print 'bidirect on'
@@ -177,6 +183,7 @@ def build_model(conf):
 
   else:
     print 'only one layer'
+    print 'no attention attention implemented'
     if conf.cnn == 'on':
       print 'cnn is on'
       if conf.bidirect == 'on':

@@ -115,7 +115,8 @@ def readINI(filename):
   '''setting the right datatypes for the configfile arguments
   ATTENTION!!!! IF NEW configfile arguments gets added it must be inserted here!!!!
   config file arguments that are list get handled above!!'''
-  
+
+  conf.attention=str(conf.attention)
   conf.batchnorm=str(conf.batchnorm)
   conf.batchsize=int(conf.batchsize)
   conf.bestparams=str(conf.bestparams)
