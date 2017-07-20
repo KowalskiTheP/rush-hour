@@ -79,10 +79,12 @@ def build_model(conf):
       cnn=BatchNormalization()(cnn)
 
   if conf.timedistributed == 'on':
-    print 'timedistributed on'
+    if conf.verbosity > 2:
+      print 'timedistributed on'
     returnSequences=True
   else:
-    print 'timedistributed off'
+    if conf.verbosity > 2:
+      print 'timedistributed off'
     returnSequences=False
 
   # first layer is special, gets build by hand
@@ -91,9 +93,11 @@ def build_model(conf):
       print 'more than one layer'
       print 'layer 0: ',conf.neuronsperlayer[0]
     if conf.cnn == 'on':
-      print 'cnn on'
+      if conf.verbosity > 2:
+        print 'cnn on'
       if conf.bidirect == 'on':
-        print 'bidirect on'
+        if conf.verbosity > 2:
+          print 'bidirect on'
         lstm_encode=Bidirectional(LSTM(conf.neuronsperlayer[0],
                                    activation=conf.activationperlayer[0],
                                    return_sequences=True,
@@ -101,7 +105,8 @@ def build_model(conf):
                                    dropout=conf.dropout[0],
                                    recurrent_dropout=conf.dropout[0]))(cnn)
       else:
-        print 'bidirect off'
+        if conf.verbosity > 2:
+          print 'bidirect off'
         lstm_encode=LSTM(conf.neuronsperlayer[0],
                          activation=conf.activationperlayer[0],
                          return_sequences=True,
@@ -109,9 +114,11 @@ def build_model(conf):
                          dropout=conf.dropout[0],
                          recurrent_dropout=conf.dropout[0])(cnn)
     else:
-      print 'cnn off'
+      if conf.verbosity > 2:
+        print 'cnn off'
       if conf.bidirect == 'on':
-        print 'bidirect on'
+        if conf.verbosity > 2:
+          print 'bidirect on'
         lstm_encode=Bidirectional(LSTM(conf.neuronsperlayer[0],
                                        activation=conf.activationperlayer[0],
                                        return_sequences=True,
@@ -119,7 +126,8 @@ def build_model(conf):
                                        dropout=conf.dropout[0],
                                        recurrent_dropout=conf.dropout[0]))(inputs)
       else:
-        print 'bidirect off'
+        if conf.verbosity > 2:
+          print 'bidirect off'
         lstm_encode=LSTM(conf.neuronsperlayer[0],
                          activation=conf.activationperlayer[0],
                          return_sequences=True,
@@ -131,9 +139,11 @@ def build_model(conf):
     if len(conf.neuronsperlayer) > 2:
       if conf.verbosity > 2:
         print 'build more than 2 layer'
+        print 'if attention is on then it will be applied before \n the last lstm layer'
       for i in xrange(1,len(conf.neuronsperlayer)-1):
         if conf.bidirect == 'on':
-          print 'bidirect on'
+          if conf.verbosity > 2:
+            print 'bidirect on'
           lstm_encode=Bidirectional(LSTM(conf.neuronsperlayer[i],
                                          activation=conf.activationperlayer[i],
                                          return_sequences=returnSequences,
@@ -141,7 +151,8 @@ def build_model(conf):
                                          dropout=conf.dropout[i],
                                          recurrent_dropout=conf.dropout[i]))(lstm_encode)
         else:
-          print 'bidirect off'
+          if conf.verbosity > 2:
+            print 'bidirect off'
           lstm_encode=LSTM(conf.neuronsperlayer[i],
                            activation=conf.activationperlayer[i],
                            return_sequences=returnSequences,
@@ -149,7 +160,8 @@ def build_model(conf):
                            dropout=conf.dropout[i],
                            recurrent_dropout=conf.dropout[i])(lstm_encode)
     if conf.attention == 'on':
-      print 'attention on'
+      if conf.verbosity > 2:
+        print 'attention on'
       num_hidden=int(lstm_encode.shape[2])
       attention=Permute((2,1))(lstm_encode)
       # not sure if the reshape is necessary? (FM)
@@ -159,10 +171,12 @@ def build_model(conf):
       attention_probability=Permute((2,1))(attention)
       lstm_encode=Multiply([lstm_encode, attention_probability])
     else:
-      print 'attention off'
+      if conf.verbosity > 2:
+        print 'attention off'
 
     if conf.bidirect == 'on':
-      print 'bidirect on'
+      if conf.verbosity > 2:
+        print 'bidirect on'
       lstm_decode=Bidirectional(LSTM(conf.neuronsperlayer[-1],
                                      activation=conf.activationperlayer[-1],
                                      return_sequences=returnSequences,
@@ -170,7 +184,8 @@ def build_model(conf):
                                      dropout=conf.dropout[-1],
                                      recurrent_dropout=conf.dropout[-1]))(lstm_encode)
     else:
-      print 'bidirect off'
+      if conf.verbosity > 2:
+        print 'bidirect off'
       lstm_decode=LSTM(conf.neuronsperlayer[-1],
                        activation=conf.activationperlayer[-1],
                        return_sequences=returnSequences,
@@ -182,10 +197,12 @@ def build_model(conf):
       lstm_decode=BatchNormalization()(lstm_decode)
 
   else:
-    print 'only one layer'
-    print 'no attention attention implemented'
+    if conf.verbosity > 2:
+      print 'only one layer'
+      print 'no attention attention implemented'
     if conf.cnn == 'on':
-      print 'cnn is on'
+      if conf.verbosity > 2:
+        print 'cnn is on'
       if conf.bidirect == 'on':
         lstm_decode=Bidirectional(LSTM(conf.neuronsperlayer,
                                        activation=conf.activationperlayer,
@@ -202,9 +219,11 @@ def build_model(conf):
                          recurrent_dropout=conf.dropout)(cnn)
 
     else:
-      print 'cnn is off'
+      if conf.verbosity > 2:
+        print 'cnn is off'
       if conf.bidirect == 'on':
-        print 'bidirect on'
+        if conf.verbosity > 2:
+          print 'bidirect on'
         lstm_decode=Bidirectional(LSTM(conf.neuronsperlayer,
                                        activation=conf.activationperlayer,
                                        return_sequences=returnSequences,
@@ -212,7 +231,8 @@ def build_model(conf):
                                        dropout=conf.dropout,
                                        recurrent_dropout=conf.dropout))(inputs)
       else:
-        print 'bidirect off'
+        if conf.verbosity > 2:
+          print 'bidirect off'
         lstm_decode=LSTM(conf.neuronsperlayer,
                          activation=conf.activationperlayer,
                          return_sequences=returnSequences,
