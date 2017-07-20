@@ -5,7 +5,7 @@ from keras.models import Sequential
 from keras.models import model_from_json
 from keras.layers import Dense
 from keras.layers import LSTM
-from keras keras.layers.merge import Multiply
+from keras.layers.merge import Multiply
 from keras.layers.core import *
 from keras.layers.wrappers import Bidirectional
 from keras.optimizers import Adam
@@ -169,7 +169,7 @@ def build_model(conf):
       # maybe a timedistributed dense layer with 1 neuron should also do the trick? (FM)
       attention=Dense(conf.winlength, activation='softmax')(attention)
       attention_probability=Permute((2,1))(attention)
-      lstm_encode=Multiply([lstm_encode, attention_probability])
+      lstm_encode=Multiply()([lstm_encode, attention_probability])
     else:
       if conf.verbosity > 2:
         print 'attention off'
