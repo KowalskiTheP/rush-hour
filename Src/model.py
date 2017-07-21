@@ -244,10 +244,10 @@ def build_model(conf):
       lstm_decode=BatchNormalization()(lstm_decode)
 
   if conf.timedistributed == 'on':
-    dense=TimeDistributed(Dense(units=conf.outputlength,
+    dense=TimeDistributed(Dense(units=conf.outputdim,
                 activation='linear'))(lstm_decode)
   else:
-    dense=Dense(units=conf.outputlength,
+    dense=Dense(units=conf.outputdim,
                 activation='linear')(lstm_decode)
 
   model=Model(inputs=inputs, outputs=dense)
@@ -257,10 +257,9 @@ def build_model(conf):
     model.summary()
 
   start=time.time()
-  #!!!!!!!!implement learning Rate scheduler!!!!!!!!
   if conf.optimiser == 'adam':
       opt=Adam(lr=conf.learningrate,
-               decay=conf.decay)
+               decay=0.0)
   #!!!!!!!!implement working custom loss!!!!!!!!
   if conf.loss == 'stock_loss':
     model.compile(loss=stock_loss, optimizer=opt)

@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 np.set_printoptions(linewidth=150)
 import sys
-from keras.callbacks import EarlyStopping
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 
 conf = readConf.readINI("../Data/config.conf")
 os.environ.TF_CPP_MIN_LOG_LEVEL = str(conf.loglevel)
@@ -45,13 +45,29 @@ if conf.tuning == 'on':
   sys.exit()
 
 else:
+###### BUILDING AND TRAINING OF MODEL
 
-  model1 = model.build_model(conf)
-  earlyStopping = EarlyStopping(monitor='loss', min_delta=conf.earlystop, patience=10, verbose=2)
-  model1.fit(x_winTrain, y_winTrain, conf.batchsize, conf.epochs)
+  model1=model.build_model(conf)
+  #early stopping stuff
+  earlyStopping=EarlyStopping(monitor='val_loss', min_delta=conf.earlystop, patience=30, verbose=2)
 
+  #checkpoint stuff
+  saving_interval=np.round(conf.epochs/4).astype(int)
+  filen, fileext=os.path.splitext(conf.modelfile)
+  filen=filen+'_epoch{epoch:02d}'+fileext
+  checkpoint=ModelCheckpoint(filen, monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=saving_interval)
+  
+  #Learning rate schedule
+  lr_sched=ReduceLROnPlateau(monitor='val_loss', factor=conf.decay, patience=10, verbose=1, mode='auto', epsilon=0.0001, cooldown=0, min_lr=0)
+
+  #fitting stuff
+  model1.fit(x_winTrain, y_winTrain, conf.batchsize, conf.epochs, callbacks=[earlyStopping,checkpoint,lr_sched], validation_split=0.1)
+
+  #save last model
   model.safe_model(model1, conf)
   loaded_model = model.load_model(conf)
+
+######
 
   # simple predictions or eval metrics
   #y_winTest = y_winTest.flatten()

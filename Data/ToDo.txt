@@ -6,7 +6,7 @@ Yannic:
 - data dependant normalisation
 
 Florian:
-- Time Distributed (urgent)
+- Time Distributed (urgent) (partially done)
 - relational networks
 - save plots and archive models and true values/predictions
 - keep hyperband up-to-date 
