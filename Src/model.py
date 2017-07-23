@@ -116,6 +116,17 @@ def build_model(conf):
     else:
       if conf.verbosity > 2:
         print 'cnn off'
+      if conf.doubleattention == 'on':
+        if conf.verbosity > 2:
+          print 'double attention on'
+        #print attention.shape
+        # maybe a timedistributed dense layer with 1 neuron should also do the trick? (FM)
+        attention_probability=Dense(conf.inputdim, activation='softmax')(inputs)
+        inputs1=Multiply()([inputs, attention_probability])
+        temp_input=inputs1
+      else:
+        temp_input=inputs
+
       if conf.bidirect == 'on':
         if conf.verbosity > 2:
           print 'bidirect on'
@@ -124,7 +135,7 @@ def build_model(conf):
                                        return_sequences=True,
                                        recurrent_activation=conf.recurrentactivation[0],
                                        dropout=conf.dropout[0],
-                                       recurrent_dropout=conf.dropout[0]))(inputs)
+                                       recurrent_dropout=conf.dropout[0]))(temp_input)
       else:
         if conf.verbosity > 2:
           print 'bidirect off'
@@ -133,7 +144,7 @@ def build_model(conf):
                          return_sequences=True,
                          recurrent_activation=conf.recurrentactivation[0],
                          dropout=conf.dropout[0],
-                         recurrent_dropout=conf.dropout[0])(inputs)
+                         recurrent_dropout=conf.dropout[0])(temp_input)
 
 
     if len(conf.neuronsperlayer) > 2:

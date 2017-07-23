@@ -126,6 +126,7 @@ def readINI(filename):
   conf.datecolumn=str(conf.datecolumn)
   conf.datetopred=str(conf.datetopred)
   conf.decay=float(conf.decay)
+  conf.doubleattention=str(conf.doubleattention)
   conf.earlystop=float(conf.earlystop)
   conf.epochs=int(conf.epochs)
   conf.evalmetrics=str(conf.evalmetrics)
