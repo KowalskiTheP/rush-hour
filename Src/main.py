@@ -17,7 +17,6 @@ loadData_start_time = time.time()
 print '> Loading data... '
 #dataframe = loadData.load_fromCSV(conf.csvfile, ',', ';', int(conf.header), conf.datecolumn)
 dataframe = loadData.load_fromCSV(conf.csvfile, '.', ',', int(conf.header), conf.datecolumn)
-
 print '> Windowing data...'
 yLen = int(conf.outputlength)
 
