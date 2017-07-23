@@ -252,11 +252,11 @@ def make_windowed_data_withSplit(dataframe, config):
       x_winTest_norm.append(  normalise_data_refValue(testMax[j]          ,x_winTest[j])  )
       y_winTest_norm.append(  normalise_data_refValue(testMax[j,y_column] ,y_winTest[j])  )
   
-
-  x_winTrain_norm = np.reshape(np.array(x_winTrain_norm),(len(x_winTrain_norm),winL,xDim ))
-  y_winTrain_norm = np.reshape(np.array(y_winTrain_norm),(len(y_winTrain_norm),yLen ))
-  x_winTest_norm =  np.reshape(np.array(x_winTest_norm) ,(len(x_winTest_norm) ,winL,xDim ))
-  y_winTest_norm =  np.reshape(np.array(y_winTest_norm) ,(len(y_winTest_norm) ,yLen ))
+  if config.normalise != 0:
+    x_winTrain_norm = np.reshape(np.array(x_winTrain_norm),(len(x_winTrain_norm),winL,xDim ))
+    y_winTrain_norm = np.reshape(np.array(y_winTrain_norm),(len(y_winTrain_norm),yLen ))
+    x_winTest_norm =  np.reshape(np.array(x_winTest_norm) ,(len(x_winTest_norm) ,winL,xDim ))
+    y_winTest_norm =  np.reshape(np.array(y_winTest_norm) ,(len(y_winTest_norm) ,yLen ))
 
   if config.normalise == 0:
     return x_winTrain, y_winTrain, x_winTest, y_winTest
