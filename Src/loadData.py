@@ -211,7 +211,7 @@ def make_windowed_data_withSplit(dataframe, config):
         y_tmp.append(y_winTest[i])
     x_winTest = np.array(x_tmp)
     y_winTest = np.array(y_tmp)
-  
+
 #=====================  
   if 0 == 0:
     x_tmp, y_tmp = [],[]
@@ -229,7 +229,7 @@ def make_windowed_data_withSplit(dataframe, config):
         y_tmp.append(y_winTest[i])
     x_winTest = np.array(x_tmp)
     y_winTest = np.array(y_tmp)  
-  
+
   if config.normalise == 3:
     x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm,trainRef,testRef = [],[],[],[],[],[]
     for i in range(len(y_winTrain)):
@@ -240,7 +240,7 @@ def make_windowed_data_withSplit(dataframe, config):
       x_winTest_norm.append( normalise_data_refValue(x_winTest[i,-1],x_winTest[i]))
       y_winTest_norm.append( normalise_data_refValue(x_winTest[i,-1,y_column],y_winTest[i]))
       testRef.append(x_winTest[i,-1])
-    
+
   if config.normalise == 4:
     trainMin,trainMax,x_winTrain,y_winTrain = minMaxNorm(x_winTrain,y_winTrain,y_column,yNorm=True)
     testMin ,testMax ,x_winTest ,y_winTest  = minMaxNorm(x_winTest ,y_winTest ,y_column,yNorm=True)
@@ -251,12 +251,12 @@ def make_windowed_data_withSplit(dataframe, config):
     for j in range(len(y_winTest)):
       x_winTest_norm.append(  normalise_data_refValue(testMax[j]          ,x_winTest[j])  )
       y_winTest_norm.append(  normalise_data_refValue(testMax[j,y_column] ,y_winTest[j])  )
-  
 
-  x_winTrain_norm = np.reshape(np.array(x_winTrain_norm),(len(x_winTrain_norm),winL,xDim ))
-  y_winTrain_norm = np.reshape(np.array(y_winTrain_norm),(len(y_winTrain_norm),yLen ))
-  x_winTest_norm =  np.reshape(np.array(x_winTest_norm) ,(len(x_winTest_norm) ,winL,xDim ))
-  y_winTest_norm =  np.reshape(np.array(y_winTest_norm) ,(len(y_winTest_norm) ,yLen ))
+  if config.normalise != 0:
+    x_winTrain_norm = np.reshape(np.array(x_winTrain_norm),(len(x_winTrain_norm),winL,xDim ))
+    y_winTrain_norm = np.reshape(np.array(y_winTrain_norm),(len(y_winTrain_norm),yLen ))
+    x_winTest_norm =  np.reshape(np.array(x_winTest_norm) ,(len(x_winTest_norm) ,winL,xDim ))
+    y_winTest_norm =  np.reshape(np.array(y_winTest_norm) ,(len(y_winTest_norm) ,yLen ))
 
   if config.normalise == 0:
     return x_winTrain, y_winTrain, x_winTest, y_winTest

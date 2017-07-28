@@ -13,6 +13,7 @@ from keras.layers import Dropout
 from keras.layers.convolutional import Conv1D
 from keras.layers.convolutional import MaxPooling1D
 from keras.layers.normalization import BatchNormalization
+from keras.initializers import RandomUniform
 from keras.layers import TimeDistributed
 from keras import backend as K
 import numpy as np
@@ -121,8 +122,13 @@ def build_model(conf):
           print 'double attention on'
         #print attention.shape
         # maybe a timedistributed dense layer with 1 neuron should also do the trick? (FM)
-        attention_probability=Dense(conf.inputdim, activation='softmax')(inputs)
+        #attention=Permute((2,1))(inputs)
+        initializer=RandomUniform(minval=-0.005, maxval=0.005, seed=42)
+        #attention_probability=Dense(conf.winlength, activation='softmax', kernel_initializer=initializer)(attention)
+        #attention_probability=Permute((2,1))(attention_probability)
+        attention_probability=Dense(conf.inputdim, activation='softmax', kernel_initializer=initializer)(inputs)
         inputs1=Multiply()([inputs, attention_probability])
+        #inputs1=attention_probability
         temp_input=inputs1
       else:
         temp_input=inputs

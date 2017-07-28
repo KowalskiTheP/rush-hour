@@ -35,6 +35,9 @@ if conf.timedistributed == 'on':
 print 'x_winTrain',x_winTrain[0]
 print 'y_winTrain',y_winTrain[0]
 
+#x_winTrain=x_winTrain/1000.
+#x_winTest=x_winTest/1000.
+#print 'x_winTrain',x_winTrain[0]
 print '> Data loaded! This took: ', time.time() - loadData_start_time, 'seconds'
 
 if conf.tuning == 'on':
