@@ -32,12 +32,15 @@ if conf.timedistributed == 'on':
     y_winTrain = np.reshape(y_winTrain, (len(y_winTrain), yLen, 1))
     y_winTest  = np.reshape(y_winTest, (len(y_winTest), yLen, 1))
 
+print 'x_winTrain',x_winTrain[0,:,1]
 print 'x_winTrain',x_winTrain[0]
 print 'y_winTrain',y_winTrain[0]
 
-#x_winTrain=x_winTrain/1000.
-#x_winTest=x_winTest/1000.
-#print 'x_winTrain',x_winTrain[0]
+for jjj in range(len(x_winTrain)):
+  if np.isnan(x_winTrain[jjj]).any() == True:
+    print np.isnan(x_winTrain[jjj])
+  #print np.isnan(y_winTrain[jjj])
+
 print '> Data loaded! This took: ', time.time() - loadData_start_time, 'seconds'
 
 if conf.tuning == 'on':

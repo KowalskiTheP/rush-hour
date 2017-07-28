@@ -213,7 +213,7 @@ def make_windowed_data_withSplit(dataframe, config):
     y_winTest = np.array(y_tmp)
 
 #=====================  
-  if 0 == 0:
+  if 0 == 1:
     x_tmp, y_tmp = [],[]
     for i in range(len(x_winTrain)):
       if x_winTrain[i,-1,0] != 6.:
@@ -233,18 +233,26 @@ def make_windowed_data_withSplit(dataframe, config):
   if config.normalise == 3:
     x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm,trainRef,testRef = [],[],[],[],[],[]
     for i in range(len(y_winTrain)):
-      x_winTrain_norm.append(normalise_data_refValue(x_winTrain[i,-1],x_winTrain[i]))
-      y_winTrain_norm.append(normalise_data_refValue(x_winTrain[i,-1,y_column],y_winTrain[i]))
+      x_winTrain_norm.append(normalise_data_refValue(config.refvalue,x_winTrain[i]))
+      y_winTrain_norm.append(normalise_data_refValue(config.refvalue,y_winTrain[i]))
       trainRef.append(x_winTrain[i,-1])
     for i in range(len(y_winTest)):
-      x_winTest_norm.append( normalise_data_refValue(x_winTest[i,-1],x_winTest[i]))
-      y_winTest_norm.append( normalise_data_refValue(x_winTest[i,-1,y_column],y_winTest[i]))
+      x_winTest_norm.append( normalise_data_refValue(config.refvalue,x_winTest[i]))
+      y_winTest_norm.append( normalise_data_refValue(config.refvalue,y_winTest[i]))
       testRef.append(x_winTest[i,-1])
 
   if config.normalise == 4:
     trainMin,trainMax,x_winTrain,y_winTrain = minMaxNorm(x_winTrain,y_winTrain,y_column,yNorm=True)
     testMin ,testMax ,x_winTest ,y_winTest  = minMaxNorm(x_winTest ,y_winTest ,y_column,yNorm=True)
     x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm = [],[],[],[]
+    for i in range(len(trainMax)):
+      for j in range(len(trainMax[i])):
+        if trainMax[i,j] == 0.:
+          trainMax[i,j] = 1.
+    for i in range(len(testMax)):
+      for j in range(len(testMax[i])):
+        if testMax[i,j] == 0.:
+          testMax[i,j] = 1.
     for i in range(len(y_winTrain)):
       x_winTrain_norm.append( normalise_data_refValue(trainMax[i]         ,x_winTrain[i]) )
       y_winTrain_norm.append( normalise_data_refValue(trainMax[i,y_column],y_winTrain[i]) )
