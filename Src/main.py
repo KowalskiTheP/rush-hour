@@ -26,20 +26,15 @@ if conf.normalise == 0:
 if conf.normalise == 3:   
     x_winTrain, y_winTrain, x_winTest, y_winTest, trainRef, testRef = loadData.make_windowed_data_withSplit(dataframe,conf)
 if conf.normalise == 4:
-    x_winTrain, y_winTrain, x_winTest, y_winTest,trainMax,trainMin,testMax,testMin = loadData.make_windowed_data_withSplit(dataframe,conf)
+    x_winTrain, y_winTrain, x_winTest, y_winTest,trainMax_x,trainMin_x,trainMax_y,trainMin_y,testMax_x,testMin_x,testMax_y,testMin_y = loadData.make_windowed_data_withSplit(dataframe,conf)
 
 if conf.timedistributed == 'on':
     y_winTrain = np.reshape(y_winTrain, (len(y_winTrain), yLen, 1))
     y_winTest  = np.reshape(y_winTest, (len(y_winTest), yLen, 1))
 
-print 'x_winTrain',x_winTrain[0,:,1]
-print 'x_winTrain',x_winTrain[0]
-print 'y_winTrain',y_winTrain[0]
-
 for jjj in range(len(x_winTrain)):
   if np.isnan(x_winTrain[jjj]).any() == True:
     print np.isnan(x_winTrain[jjj])
-  #print np.isnan(y_winTrain[jjj])
 
 print '> Data loaded! This took: ', time.time() - loadData_start_time, 'seconds'
 
@@ -90,25 +85,24 @@ else:
   predTest = np.reshape(predTest,y_winTest.shape)
 
   if conf.normalise == 3:
-    y_column = int(conf.y_column)
     for i in range(len(testRef)):
-      predTest[i] = (testRef[i,y_column]*predTest[i])
-      y_winTest[i] = (testRef[i,y_column]*y_winTest[i])
-      x_winTest[i] = (testRef[i]*x_winTest[i])
+      predTest[i]   = testRef[i]  * predTest[i] 
+      y_winTest[i]  = testRef[i]  * y_winTest[i]
     for i in range(len(trainRef)):
-      y_winTrain[i] = trainRef[i,y_column]*y_winTrain[i]
-      predTrain[i] = trainRef[i,y_column]*predTrain[i]
-
+      y_winTrain[i] = trainRef[i] * y_winTrain[i]
+      predTrain[i]  = trainRef[i] * predTrain[i]
+  
   if conf.normalise == 4:
-    x_winTest_deN = np.copy(x_winTest)
-    y_column = int(conf.y_column)
-    for i in range(len(testMax)):
-      predTest[i] = (testMax[i,y_column]*predTest[i]) + testMin[i,y_column]
-      y_winTest[i] = (testMax[i,y_column]*y_winTest[i]) + testMin[i,y_column]
-      x_winTest[i] = (testMax[i]*x_winTest[i]) + testMin[i]
-    for i in range(len(trainMax)):
-      y_winTrain[i] = trainMax[i,y_column]*y_winTrain[i] + trainMin[i,y_column]
-      predTrain[i] = trainMax[i,y_column]*predTrain[i] + trainMin[i,y_column]
+    print 'len(testMax_y),len(predTest): ',len(testMax_y),len(predTest)
+    print 'testMax_y: ',testMax_y
+    print 'predTest: ', predTest
+    for i in range(len(testMax_y)):
+      predTest[i]   = testMax_y[i]  * predTest[i]   + testMin_y[i]
+      y_winTest[i]  = testMax_y[i]  * y_winTest[i]  + testMin_y[i]
+    for i in range(len(trainMax_y)):
+      y_winTrain[i] = trainMax_y[i] * y_winTrain[i] + trainMin_y[i]
+      predTrain[i]  = trainMax_y[i] * predTrain[i]  + trainMin_y[i]
+    print 'predTest: ', predTest
 
 winL = int(conf.winlength)
 

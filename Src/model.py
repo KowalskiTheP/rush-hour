@@ -4,6 +4,7 @@ from keras.layers import Input
 from keras.models import Sequential
 from keras.models import model_from_json
 from keras.layers import Dense
+#from keras.initializers import Constant
 from keras.layers import LSTM
 from keras.layers.merge import Multiply
 from keras.layers.core import *
@@ -259,6 +260,7 @@ def build_model(conf):
                 activation='linear'))(lstm_decode)
   else:
     dense=Dense(units=conf.outputdim,
+                #kernel_initializer=Constant(value=21000.),
                 activation='linear')(lstm_decode)
 
   model=Model(inputs=inputs, outputs=dense)
