@@ -27,8 +27,13 @@ def readINI(filename):
     conf['columns']=valuesNew
   else:
     conf['columns']=[int(conf['columns'])]
-    
-  conf['y_column']=int(conf['y_column'])
+
+  if isinstance(conf['y_column'], list):
+    valuesNew=[int(item) for item in conf['y_column']]
+    conf['y_column']=valuesNew
+  else:
+    conf['y_column']=[int(conf['y_column'])]    
+  #conf['y_column']=int(conf['y_column'])
 
   
   for name, value in confParser.items('network'):
@@ -84,6 +89,12 @@ def readINI(filename):
     conf['columns']=valuesNew
   else:
     conf['columns']=int(conf['columns'])
+    
+  if  isinstance(conf['y_column'], list) == True:
+    valuesNew=[int(item) for item in conf['y_column']]
+    conf['y_column']=valuesNew
+  else:
+    conf['y_column']=int(conf['y_column'])
  
   for name, value in confParser.items('tuning'):
     if conf[name] is not None:
@@ -154,7 +165,7 @@ def readINI(filename):
   conf.tuning=str(conf.tuning)
   conf.verbosity=str(conf.verbosity)
   conf.winlength=int(conf.winlength)
-  conf.y_column=int(conf.y_column)
+  #conf.y_column=int(conf.y_column)
   
   pp=pprint.PrettyPrinter(indent=2)
   pp.pprint(unbunchify(conf))

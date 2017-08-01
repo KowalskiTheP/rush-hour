@@ -4,6 +4,7 @@ from keras.layers import Input
 from keras.models import Sequential
 from keras.models import model_from_json
 from keras.layers import Dense
+#from keras.initializers import Constant
 from keras.layers import LSTM
 from keras.layers.merge import Multiply
 from keras.layers.core import *
@@ -185,6 +186,7 @@ def build_model(conf):
       attention=Reshape((num_hidden,-1))(attention)
       # maybe a timedistributed dense layer with 1 neuron should also do the trick? (FM)
       attention=Dense(conf.winlength, activation='softmax')(attention)
+      #attention_probability=Dense(num_hidden, activation='softmax')(lstm_encode)
       attention_probability=Permute((2,1))(attention)
       lstm_encode=Multiply()([lstm_encode, attention_probability])
     else:
@@ -265,6 +267,7 @@ def build_model(conf):
                 activation='linear'))(lstm_decode)
   else:
     dense=Dense(units=conf.outputdim,
+                #kernel_initializer=Constant(value=21000.),
                 activation='linear')(lstm_decode)
 
   model=Model(inputs=inputs, outputs=dense)
