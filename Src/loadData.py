@@ -130,17 +130,32 @@ def minMaxNorm_x(xWinTrain):
   for j in range(len(xWinTrain)):
     tmpMin_x, tmpMax_x, tmpMin_y, tmpMax_y = [], [], [], []
     
-    for i in range(len(xWinTrain[0,0])):
-      tmpMin_x.append(np.amin(xWinTrain[j,:,i]))
-    xWinTrain[j,:] = xWinTrain[j,:] - tmpMin_x
-    
-    
-    for i in range(len(xWinTrain[0,0])):
-      tmpMax_x.append(np.amax(xWinTrain[j,:,i]))
-    trainMin_x.append(tmpMin_x)
-    trainMax_x.append(tmpMax_x)
+    trainMin_x.append(np.amin(xWinTrain[j,:,:]))
+    xWinTrain[j,:] = xWinTrain[j,:] - trainMin_x[-1]
+    trainMax_x.append(np.amax(xWinTrain[j,:,:]))
+
     
   return np.array(trainMin_x), np.array(trainMax_x), xWinTrain
+
+#============================================================================== !!!! 
+
+#def minMaxNorm_x(xWinTrain):
+  #trainMin_x, trainMax_x, trainMin_y, trainMax_y = [], [],[], []
+  #for j in range(len(xWinTrain)):
+    #tmpMin_x, tmpMax_x, tmpMin_y, tmpMax_y = [], [], [], []
+    #print xWinTrain[0,0]
+    #sys.exit()
+    #for i in range(len(xWinTrain[0,0])):
+      #tmpMin_x.append(np.amin(xWinTrain[j,:,i]))
+    #xWinTrain[j,:] = xWinTrain[j,:] - tmpMin_x
+    
+    
+    #for i in range(len(xWinTrain[0,0])):
+      #tmpMax_x.append(np.amax(xWinTrain[j,:,i]))
+    #trainMin_x.append(tmpMin_x)
+    #trainMax_x.append(tmpMax_x)
+    
+  #return np.array(trainMin_x), np.array(trainMax_x), xWinTrain
 
 #============================================================================== !!!! 
 
@@ -176,6 +191,17 @@ def make_windowed_data_withSplit(dataframe, config):
   dataSet_Full_x, dataSet_Full_y = getDataSet_noSplit(dataframe, config.columns, config.y_column)
   yRefValue=np.mean(dataSet_Full_y)
   yMinValue=np.amin(dataSet_Full_y)
+  maxTime = np.amax(dataSet_Full_x[:,0])
+  dataSet_Full_x[:,0] = dataSet_Full_x[:,0] / maxTime
+  
+  print dataSet_Full_x
+  for j in range(1,xDim):
+    #if np.mean(dataSetTrain_x[:,j]) > 100.:
+      #dataSetTrain_x[:,j] = dataSetTrain_x[:,j]/4.
+    div = np.amin(dataSet_Full_x[:,j])
+    dataSet_Full_x[:,j] = dataSet_Full_x[:,j] - div
+    print np.mean(dataSet_Full_x[:,j])
+  
   print 'yRefValue: ', yRefValue
   print 'yMinValue: ', yMinValue
   #dataSet_Full_tmp = dataSet_Full.copy()
@@ -205,7 +231,10 @@ def make_windowed_data_withSplit(dataframe, config):
 #=========================================================================================
 
   dataSetTrain_x, dataSetTest_x = split_data(dataSet_Full_x, config.traintestsplit)
+
   dataSetTrain_y, dataSetTest_y = split_data(dataSet_Full_y, config.traintestsplit)
+  dataSetTrain_y = dataSetTrain_y - yMinValue
+  dataSetTest_y  = dataSetTest_y  - yMinValue
   
   if config.smoothingswitch == 'on':
     dataSetTrain = smoothing(dataSetTrain, config)
@@ -213,6 +242,17 @@ def make_windowed_data_withSplit(dataframe, config):
   
   x_winTrain, y_winTrain = get_windows_andShift_seq_hourly(dataSetTrain_x, dataSetTrain_y, winL, lookB,yLen)
   x_winTest, y_winTest   = get_windows_andShift_seq_hourly(dataSetTest_x , dataSetTest_y , winL, lookB,yLen)
+  
+  
+  tmp_x_winTrain = []
+  tmp_y_winTrain = []
+  for antiCorr in range(len(x_winTrain)):
+    if antiCorr % winL == 0 or antiCorr % round(winL/2) == 0:
+      tmp_x_winTrain.append(x_winTrain[antiCorr])
+      tmp_y_winTrain.append(y_winTrain[antiCorr])
+  x_winTrain = np.array(tmp_x_winTrain)
+  y_winTrain = np.array(tmp_y_winTrain)
+    
   
   print 'x_winTrain',x_winTrain[0]
   print 'y_winTrain',y_winTrain[0]
@@ -287,31 +327,30 @@ def make_windowed_data_withSplit(dataframe, config):
     
   if config.normalise == 4:
     trainMin_x, trainMax_x, x_winTrain = minMaxNorm_x(x_winTrain)
-    trainMin_y, trainMax_y, y_winTrain = minMaxNorm_y(y_winTrain,yMinValue,yRefValue)
+    #trainMin_y, trainMax_y, y_winTrain = minMaxNorm_y(y_winTrain,yMinValue,yRefValue)
     
     testMin_x, testMax_x, x_winTest   = minMaxNorm_x(x_winTest)
-    testMin_y, testMax_y, y_winTest   = minMaxNorm_y(y_winTest  ,yMinValue,yRefValue)
+    #testMin_y, testMax_y, y_winTest   = minMaxNorm_y(y_winTest  ,yMinValue,yRefValue)
     
     x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm = [],[],[],[]
     for i in range(len(trainMax_x)):
-      for j in range(len(trainMax_x[i])):
-        if trainMax_x[i,j] == 0.:
-          trainMax_x[i,j] = 1.
+      if trainMax_x[i] == 0.:
+        trainMax_x[i] = 1.
     for i in range(len(testMax_x)):
-      for j in range(len(testMax_x[i])):
-        if testMax_x[i,j] == 0.:
-          testMax_x[i,j] = 1.
+      if testMax_x[i] == 0.:
+        testMax_x[i] = 1.
     
-    yRefValue = np.amax(y_winTrain)
-    trainMax_y.fill(yRefValue)
-    testMax_y.fill(yRefValue)
+    #yRefValue = np.amax(y_winTrain)
+    #trainMax_y.fill(yRefValue)
+    #testMax_y.fill(yRefValue)
     for i in range(len(x_winTrain)):
       x_winTrain_norm.append( normalise_data_refValue(trainMax_x[i], x_winTrain[i]) )
-      y_winTrain_norm.append( normalise_data_refValue(trainMax_y[i], y_winTrain[i]) )
+      y_winTrain_norm.append( normalise_data_refValue(trainMax_x[i], y_winTrain[i]) )
 
     for j in range(len(x_winTest)):
       x_winTest_norm.append(  normalise_data_refValue(testMax_x[j] , x_winTest[j])  )
-      y_winTest_norm.append(  normalise_data_refValue(testMax_y[j] , y_winTest[j])  )
+      y_winTest_norm.append(  normalise_data_refValue(testMax_x[j] , y_winTest[j])  )
+
 
   
   if config.normalise != 0:
@@ -327,7 +366,8 @@ def make_windowed_data_withSplit(dataframe, config):
     return x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm, np.array(trainRef), np.array(testRef)
   
   if config.normalise == 4:
-    return x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm, np.array(trainMax_x),np.array(trainMin_x),np.array(trainMax_y),np.array(trainMin_y),np.array(testMax_x),np.array(testMin_x),np.array(testMax_y),np.array(testMin_y) 
+    #return x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm, np.array(trainMax_x),np.array(trainMin_x),np.array(trainMax_y),np.array(trainMin_y),np.array(testMax_x),np.array(testMin_x),np.array(testMax_y),np.array(testMin_y)
+    return x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm, np.array(trainMax_x),np.array(trainMin_x),np.array(testMax_x),np.array(testMin_x)
   
 #=========================================================================================
 

@@ -4,6 +4,7 @@ import loadData
 import os
 import time
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 np.set_printoptions(linewidth=150)
 import sys
@@ -17,6 +18,19 @@ loadData_start_time = time.time()
 print '> Loading data... '
 #dataframe = loadData.load_fromCSV(conf.csvfile, ',', ';', int(conf.header), conf.datecolumn)
 dataframe = loadData.load_fromCSV(conf.csvfile, '.', ',', int(conf.header), conf.datecolumn)
+
+cols = list(dataframe.columns.values)
+dfNew = pd.DataFrame()
+for i in range(len(dataframe)):
+  if dataframe.iloc[i,0] % 1 == 0:
+    dfNew = dfNew.append(dataframe.iloc[i,:])
+
+index = range(0,len(dfNew))
+dataframe = dfNew.reset_index(drop=True)
+dataframe = dataframe[cols]
+print 'dataframe:\n',dataframe[cols]
+
+
 print '> Windowing data...'
 yLen = int(conf.outputlength)
 
@@ -26,7 +40,8 @@ if conf.normalise == 0:
 if conf.normalise == 3:   
     x_winTrain, y_winTrain, x_winTest, y_winTest, trainRef, testRef = loadData.make_windowed_data_withSplit(dataframe,conf)
 if conf.normalise == 4:
-    x_winTrain, y_winTrain, x_winTest, y_winTest,trainMax_x,trainMin_x,trainMax_y,trainMin_y,testMax_x,testMin_x,testMax_y,testMin_y = loadData.make_windowed_data_withSplit(dataframe,conf)
+    #x_winTrain, y_winTrain, x_winTest, y_winTest,trainMax_x,trainMin_x,trainMax_y,trainMin_y,testMax_x,testMin_x,testMax_y,testMin_y = loadData.make_windowed_data_withSplit(dataframe,conf)
+    x_winTrain, y_winTrain, x_winTest, y_winTest,trainMax_x,trainMin_x,testMax_x,testMin_x = loadData.make_windowed_data_withSplit(dataframe,conf)
 
 if conf.timedistributed == 'on':
     y_winTrain = np.reshape(y_winTrain, (len(y_winTrain), yLen, 1))
@@ -93,16 +108,13 @@ else:
       predTrain[i]  = trainRef[i] * predTrain[i]
   
   if conf.normalise == 4:
-    print 'len(testMax_y),len(predTest): ',len(testMax_y),len(predTest)
-    print 'testMax_y: ',testMax_y
-    print 'predTest: ', predTest
-    for i in range(len(testMax_y)):
-      predTest[i]   = testMax_y[i]  * predTest[i]   + testMin_y[i]
-      y_winTest[i]  = testMax_y[i]  * y_winTest[i]  + testMin_y[i]
-    for i in range(len(trainMax_y)):
-      y_winTrain[i] = trainMax_y[i] * y_winTrain[i] + trainMin_y[i]
-      predTrain[i]  = trainMax_y[i] * predTrain[i]  + trainMin_y[i]
-    print 'predTest: ', predTest
+    for i in range(len(testMax_x)):
+      predTest[i]   = testMax_x[i]  * predTest[i] #  + testMin_x[i]
+      y_winTest[i]  = testMax_x[i]  * y_winTest[i]#  + testMin_x[i]
+    for i in range(len(trainMax_x)):
+      y_winTrain[i] = trainMax_x[i] * y_winTrain[i]# + trainMin_x[i]
+      predTrain[i]  = trainMax_x[i] * predTrain[i] # + trainMin_x[i]
+
 
 winL = int(conf.winlength)
 
@@ -152,7 +164,7 @@ if conf.plotting == 'on':
   else:
     model.plot_data(y_winTrain, predTrain)
     model.plot_data(y_winTest, predTest)
-    model.plot_data(y_winTest[-20:-1], predTest[-20:-1])
+    model.plot_data(y_winTest[-50:-1], predTest[-50:-1])
 
 
 
