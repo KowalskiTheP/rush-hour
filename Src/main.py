@@ -32,14 +32,27 @@ if conf.timedistributed == 'on':
     y_winTrain = np.reshape(y_winTrain, (len(y_winTrain), yLen, 1))
     y_winTest  = np.reshape(y_winTest, (len(y_winTest), yLen, 1))
 
-print 'x_winTrain',x_winTrain[0,:,1]
-print 'x_winTrain',x_winTrain[0]
-print 'y_winTrain',y_winTrain[0]
+#x_winTrain=np.delete(x_winTrain,30,2)
+#x_winTest=np.delete(x_winTest,30,2)
+
+#print 'x_winTrain',x_winTrain[0,0,:]
+#if conf.normalise == 4:
+  #testMin=np.delete(testMin,30,1)
+  #testMax=np.delete(testMax,30,1)
+  ##print 'x_winTrain',x_winTrain[0]
+  #print 'y_winTrain',y_winTrain[0]
+  #print 'testMin', testMin.shape
+  #print 'testMax', testMax.shape
 
 for jjj in range(len(x_winTrain)):
   if np.isnan(x_winTrain[jjj]).any() == True:
     print np.isnan(x_winTrain[jjj])
   #print np.isnan(y_winTrain[jjj])
+
+#y_winTestMean=np.mean(y_winTest)
+#print 'y_winTestMean', y_winTestMean
+#y_winTest=y_winTest/y_winTestMean
+#y_winTrain=y_winTrain/y_winTestMean
 
 print '> Data loaded! This took: ', time.time() - loadData_start_time, 'seconds'
 
@@ -101,7 +114,8 @@ else:
 
   if conf.normalise == 4:
     x_winTest_deN = np.copy(x_winTest)
-    y_column = int(conf.y_column)
+    y_column = conf.y_column-1
+    print y_column
     for i in range(len(testMax)):
       predTest[i] = (testMax[i,y_column]*predTest[i]) + testMin[i,y_column]
       y_winTest[i] = (testMax[i,y_column]*y_winTest[i]) + testMin[i,y_column]

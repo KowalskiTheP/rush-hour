@@ -5,8 +5,10 @@ from keras.models import Sequential
 from keras.models import model_from_json
 from keras.layers import Dense
 from keras.layers import LSTM
+from keras.regularizers import L1L2
 from keras.layers.merge import Multiply
 from keras.layers.core import *
+from keras.layers.noise import GaussianNoise
 from keras.layers.wrappers import Bidirectional
 from keras.optimizers import Adam
 from keras.layers import Dropout
@@ -60,21 +62,22 @@ def build_model(conf):
 
 
   inputs=Input(shape=(conf.winlength,conf.inputdim,))
+  reg=L1L2(l1=0.0, l2=0.01)
 
   if conf.cnn == 'on':
     print 'cnn on'
-    cnn=Conv1D(filters=32, kernel_size=7, padding='causal',input_shape=(None,conf.inputdim), activation='relu', name='cnn1_1')(inputs)
-    cnn=Conv1D(filters=32, kernel_size=7, padding='causal', activation='relu', name='cnn1_2')(cnn)
+    cnn=Conv1D(filters=16, kernel_size=7, padding='causal',input_shape=(None,conf.inputdim), activation='relu', name='cnn1_1')(inputs)
+    cnn=Conv1D(filters=16, kernel_size=7, padding='causal', activation='relu', name='cnn1_2')(cnn)
     cnn=MaxPooling1D(pool_size=2, name='max_pool1')(cnn)
     if conf.batchnorm == 'on':
       cnn=BatchNormalization()(cnn)
-    cnn=Conv1D(filters=16, kernel_size=5, padding='causal', activation='relu', name='cnn2_1')(cnn)
-    cnn=Conv1D(filters=16, kernel_size=5, padding='causal', activation='relu', name='cnn2_2')(cnn)
+    cnn=Conv1D(filters=32, kernel_size=5, padding='causal', activation='relu', name='cnn2_1')(cnn)
+    cnn=Conv1D(filters=32, kernel_size=5, padding='causal', activation='relu', name='cnn2_2')(cnn)
     cnn=MaxPooling1D(pool_size=2, name='max_pool2')(cnn)
     if conf.batchnorm == 'on':
       cnn=BatchNormalization()(cnn)
-    cnn=Conv1D(filters=8, kernel_size=3, padding='causal', activation='relu', name='cnn3_1')(cnn)
-    cnn=Conv1D(filters=8, kernel_size=3, padding='causal', activation='relu', name='cnn3_2')(cnn)
+    cnn=Conv1D(filters=64, kernel_size=3, padding='causal', activation='relu', name='cnn3_1')(cnn)
+    cnn=Conv1D(filters=64, kernel_size=3, padding='causal', activation='relu', name='cnn3_2')(cnn)
     cnn=MaxPooling1D(pool_size=2, name='max_pool3')(cnn)
     if conf.batchnorm == 'on':
       cnn=BatchNormalization()(cnn)
@@ -120,13 +123,13 @@ def build_model(conf):
       if conf.doubleattention == 'on':
         if conf.verbosity > 2:
           print 'double attention on'
+        #linear=Dense(conf.inputdim, activation='linear')(inputs)
         #print attention.shape
         # maybe a timedistributed dense layer with 1 neuron should also do the trick? (FM)
-        #attention=Permute((2,1))(inputs)
-        initializer=RandomUniform(minval=-0.005, maxval=0.005, seed=42)
-        #attention_probability=Dense(conf.winlength, activation='softmax', kernel_initializer=initializer)(attention)
-        #attention_probability=Permute((2,1))(attention_probability)
-        attention_probability=Dense(conf.inputdim, activation='softmax', kernel_initializer=initializer)(inputs)
+        attention=Permute((2,1))(inputs)
+        attention_probability=Dense(conf.winlength, activation='softmax')(attention)
+        attention_probability=Permute((2,1))(attention_probability)
+        #attention_probability=Dense(conf.inputdim, activation='softmax', kernel_initializer=initializer)(inputs)
         inputs1=Multiply()([inputs, attention_probability])
         #inputs1=attention_probability
         temp_input=inputs1
@@ -150,9 +153,10 @@ def build_model(conf):
                          return_sequences=True,
                          recurrent_activation=conf.recurrentactivation[0],
                          dropout=conf.dropout[0],
-                         recurrent_dropout=conf.dropout[0])(temp_input)
+                         recurrent_dropout=conf.dropout[0],
+                         kernel_regularizer=reg)(temp_input)
 
-
+    #lstm_encode=GaussianNoise(0.5)(lstm_encode)
     if len(conf.neuronsperlayer) > 2:
       if conf.verbosity > 2:
         print 'build more than 2 layer'
@@ -180,12 +184,12 @@ def build_model(conf):
       if conf.verbosity > 2:
         print 'attention on'
       num_hidden=int(lstm_encode.shape[2])
-      attention=Permute((2,1))(lstm_encode)
+      #attention=Permute((2,1))(lstm_encode)
       # not sure if the reshape is necessary? (FM)
-      attention=Reshape((num_hidden,-1))(attention)
+      #attention=Reshape((num_hidden,-1))(attention)
       # maybe a timedistributed dense layer with 1 neuron should also do the trick? (FM)
-      attention=Dense(conf.winlength, activation='softmax')(attention)
-      attention_probability=Permute((2,1))(attention)
+      attention_probability=Dense(num_hidden, activation='softmax')(lstm_encode)
+      #attention_probability=Permute((2,1))(attention)
       lstm_encode=Multiply()([lstm_encode, attention_probability])
     else:
       if conf.verbosity > 2:
@@ -208,7 +212,8 @@ def build_model(conf):
                        return_sequences=returnSequences,
                        recurrent_activation=conf.recurrentactivation[-1],
                        dropout=conf.dropout[-1],
-                       recurrent_dropout=conf.dropout[-1])(lstm_encode)
+                       recurrent_dropout=conf.dropout[-1],
+                       kernel_regularizer=reg)(lstm_encode)
 
     if conf.batchnorm == 'on':
       lstm_decode=BatchNormalization()(lstm_decode)
