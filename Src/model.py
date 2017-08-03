@@ -63,7 +63,7 @@ def build_model(conf):
 
 
   inputs=Input(shape=(conf.winlength,conf.inputdim,))
-  reg=L1L2(l1=0.0, l2=0.01)
+  reg=L1L2(l1=conf.l1, l2=conf.l2)
 
   if conf.cnn == 'on':
     print 'cnn on'
@@ -145,7 +145,8 @@ def build_model(conf):
                                        return_sequences=True,
                                        recurrent_activation=conf.recurrentactivation[0],
                                        dropout=conf.dropout[0],
-                                       recurrent_dropout=conf.dropout[0]))(temp_input)
+                                       recurrent_dropout=conf.dropout[0],
+                                       bias_regularizer=reg))(temp_input)
       else:
         if conf.verbosity > 2:
           print 'bidirect off'
@@ -155,9 +156,11 @@ def build_model(conf):
                          recurrent_activation=conf.recurrentactivation[0],
                          dropout=conf.dropout[0],
                          recurrent_dropout=conf.dropout[0],
-                         kernel_regularizer=reg)(temp_input)
-
-    #lstm_encode=GaussianNoise(0.5)(lstm_encode)
+                         bias_regularizer=reg)(temp_input)
+    if conf.gaussiannoise == 'on':
+      if conf.verbosity > 2:
+        print 'gaussian noise layer on'
+      lstm_encode=GaussianNoise(0.5)(lstm_encode)
     if len(conf.neuronsperlayer) > 2:
       if conf.verbosity > 2:
         print 'build more than 2 layer'
@@ -171,7 +174,8 @@ def build_model(conf):
                                          return_sequences=returnSequences,
                                          recurrent_activation=conf.recurrentactivation[i],
                                          dropout=conf.dropout[i],
-                                         recurrent_dropout=conf.dropout[i]))(lstm_encode)
+                                         recurrent_dropout=conf.dropout[i],
+                                         bias_regularizer=reg))(lstm_encode)
         else:
           if conf.verbosity > 2:
             print 'bidirect off'
@@ -180,7 +184,8 @@ def build_model(conf):
                            return_sequences=returnSequences,
                            recurrent_activation=conf.recurrentactivation[i],
                            dropout=conf.dropout[i],
-                           recurrent_dropout=conf.dropout[i])(lstm_encode)
+                           recurrent_dropout=conf.dropout[i],
+                           bias_regularizer=reg)(lstm_encode)
     if conf.attention == 'on':
       if conf.verbosity > 2:
         print 'attention on'
@@ -204,7 +209,8 @@ def build_model(conf):
                                      return_sequences=returnSequences,
                                      recurrent_activation=conf.recurrentactivation[-1],
                                      dropout=conf.dropout[-1],
-                                     recurrent_dropout=conf.dropout[-1]))(lstm_encode)
+                                     recurrent_dropout=conf.dropout[-1],
+                                     bias_regularizer=reg))(lstm_encode)
     else:
       if conf.verbosity > 2:
         print 'bidirect off'
@@ -214,7 +220,7 @@ def build_model(conf):
                        recurrent_activation=conf.recurrentactivation[-1],
                        dropout=conf.dropout[-1],
                        recurrent_dropout=conf.dropout[-1],
-                       kernel_regularizer=reg)(lstm_encode)
+                       bias_regularizer=reg)(lstm_encode)
 
     if conf.batchnorm == 'on':
       lstm_decode=BatchNormalization()(lstm_decode)
@@ -232,14 +238,16 @@ def build_model(conf):
                                        return_sequences=returnSequences,
                                        recurrent_activation=conf.recurrentactivation,
                                        dropout=conf.dropout,
-                                       recurrent_dropout=conf.dropout))(cnn)
+                                       recurrent_dropout=conf.dropout,
+                                       bias_regularizer=reg))(cnn)
       else:
         lstm_decode=LSTM(conf.neuronsperlayer,
                          activation=conf.activationperlayer,
                          return_sequences=returnSequences,
                          recurrent_activation=conf.recurrentactivation,
                          dropout=conf.dropout,
-                         recurrent_dropout=conf.dropout)(cnn)
+                         recurrent_dropout=conf.dropout,
+                         bias_regularizer=reg)(cnn)
 
     else:
       if conf.verbosity > 2:
@@ -252,7 +260,8 @@ def build_model(conf):
                                        return_sequences=returnSequences,
                                        recurrent_activation=conf.recurrentactivation,
                                        dropout=conf.dropout,
-                                       recurrent_dropout=conf.dropout))(inputs)
+                                       recurrent_dropout=conf.dropout,
+                                       bias_regularizer=reg))(inputs)
       else:
         if conf.verbosity > 2:
           print 'bidirect off'
@@ -261,7 +270,8 @@ def build_model(conf):
                          return_sequences=returnSequences,
                          recurrent_activation=conf.recurrentactivation,
                          dropout=conf.dropout,
-                         recurrent_dropout=conf.dropout)(inputs)
+                         recurrent_dropout=conf.dropout,
+                         bias_regularizer=reg)(inputs)
 
     if conf.batchnorm == 'on':
       lstm_decode=BatchNormalization()(lstm_decode)
@@ -331,13 +341,8 @@ def eval_model(test_x, test_y, trainedModel, config, tableHeader):
   score=trainedModel.evaluate(test_x, test_y, batch_size=int(config.batchsize))
   pred=predict_point_by_point(trainedModel, test_x)
   test_y=test_y.flatten()
-  rp, rp_P=stats.pearsonr(pred,test_y)
-  rs, rs_P=stats.spearmanr(pred,test_y)
-  sd=np.std(pred-test_y)
-  print '------', tableHeader, '------'
-  print tabulate({"metric": ['test loss', 'Rp', 'Rs', 'SD'],"model": [score, rp, rs, sd]}, headers="keys", tablefmt="orgtbl")
   np.savetxt(config.predictionfile, np.column_stack((pred, test_y)), delimiter=' ')
-  
+
   return pred
     
 ###############################################

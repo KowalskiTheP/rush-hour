@@ -6,6 +6,8 @@ import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import scipy.stats as stats
+from tabulate import tabulate
 np.set_printoptions(linewidth=150)
 import sys
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
@@ -19,16 +21,22 @@ print '> Loading data... '
 #dataframe = loadData.load_fromCSV(conf.csvfile, ',', ';', int(conf.header), conf.datecolumn)
 dataframe = loadData.load_fromCSV(conf.csvfile, '.', ',', int(conf.header), conf.datecolumn)
 
-cols = list(dataframe.columns.values)
-dfNew = pd.DataFrame()
-for i in range(len(dataframe)):
-  if dataframe.iloc[i,0] % 1 == 0:
-    dfNew = dfNew.append(dataframe.iloc[i,:])
 
-index = range(0,len(dfNew))
-dataframe = dfNew.reset_index(drop=True)
-dataframe = dataframe[cols]
-print 'dataframe:\n',dataframe[cols]
+if conf.timeinterval == 1:
+  print 'training on minute intervals'
+
+else:
+  print 'training on '+str(conf.timeinterval)+' minute intervals'
+  cols = list(dataframe.columns.values)
+  dfNew = pd.DataFrame()
+  for i in range(len(dataframe)):
+    if dataframe.iloc[i,0] % conf.timeinterval == 0:
+      dfNew = dfNew.append(dataframe.iloc[i,:])
+
+  index = range(0,len(dfNew))
+  dataframe = dfNew.reset_index(drop=True)
+  dataframe = dataframe[cols]
+  print 'dataframe:\n',dataframe[cols]
 
 
 print '> Windowing data...'
@@ -129,9 +137,9 @@ y_winTest = np.reshape(y_winTest,(len(y_winTest),yLen,1))
 y_winTrain = np.reshape(y_winTrain,(len(y_winTrain),yLen,1))
 
 if conf.timedistributed == 'on':
-  for i in range(conf.look_back+conf.winlength-1,0,-1):
+  for i in range(conf.look_back+conf.winlength-2,0,-1):
     diffTrain = np.sqrt((predTest[:,-i] - y_winTest[:,-i])**2)
-    slopePred = (predTest[:,-i]-predTest[:,-i-1]) 
+    slopePred = (predTest[:,-i]-predTest[:,-i-1])
     slopeTest = (y_winTest[:,-i]-y_winTest[:,-i-1])
     rightSign = 0
     for k in range(len(slopePred)):
@@ -147,9 +155,15 @@ else:
   y_winTest = y_winTest.flatten()
   predTest = predTest.flatten()  
   diffTrain = np.sqrt((predTest - y_winTest)**2)
+  diffTrain1=predTest-y_winTest
+  rp, rp_P=stats.pearsonr(predTest,y_winTest)
+  rs, rs_P=stats.spearmanr(predTest,y_winTest)
+  mae=np.mean(diffTrain)
+  sd_mae=np.std(diffTrain)
+  sd=np.std(diffTrain1)
+  print '\n------ METRICS ------'
+  print tabulate({"metric": ['Rp', 'Rs', 'MAE', 'SD(MAE)', 'SD'],"model": [rp, rs, mae, sd_mae, sd]}, headers="keys", tablefmt="orgtbl")
 
-  print 'MAE: ', np.mean(diffTrain)
-  print 'SD:  ', np.std(diffTrain)
 
 if conf.plotting == 'on':
   if conf.timedistributed == 'on':
