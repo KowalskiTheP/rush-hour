@@ -88,6 +88,7 @@ else:
   #Learning rate schedule
   lr_sched=ReduceLROnPlateau(monitor='val_loss', factor=conf.decay, patience=10, verbose=1, mode='auto', epsilon=0.0001, cooldown=0, min_lr=0)
 
+
   if conf.stateful == 'on':
     for epoch in range(conf.epochs):
       mean_training_accuracy = []
@@ -105,6 +106,7 @@ else:
   else:
     #fitting stuff
     model1.fit(x_winTrain, y_winTrain, conf.batchsize, conf.epochs, callbacks=[earlyStopping,checkpoint,lr_sched], validation_split=0.1, shuffle=False)
+
 
   #save last model
   model.safe_model(model1, conf)

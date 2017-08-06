@@ -235,15 +235,14 @@ def make_windowed_data_withSplit(dataframe, config):
   dataSetTrain_y, dataSetTest_y = split_data(dataSet_Full_y, config.traintestsplit)
   dataSetTrain_y = dataSetTrain_y - yMinValue
   dataSetTest_y  = dataSetTest_y  - yMinValue
-  
+
   if config.smoothingswitch == 'on':
     dataSetTrain = smoothing(dataSetTrain, config)
     dataSetTest_smooth = smoothing(dataSetTest, config)
-  
+
   x_winTrain, y_winTrain = get_windows_andShift_seq_hourly(dataSetTrain_x, dataSetTrain_y, winL, lookB,yLen)
   x_winTest, y_winTest   = get_windows_andShift_seq_hourly(dataSetTest_x , dataSetTest_y , winL, lookB,yLen)
-  
-  
+
   tmp_x_winTrain = []
   tmp_y_winTrain = []
   for antiCorr in range(len(x_winTrain)):
@@ -252,11 +251,12 @@ def make_windowed_data_withSplit(dataframe, config):
       tmp_y_winTrain.append(y_winTrain[antiCorr])
   x_winTrain = np.array(tmp_x_winTrain)
   y_winTrain = np.array(tmp_y_winTrain)
-    
-  
+
   print 'x_winTrain',x_winTrain[0]
   print 'y_winTrain',y_winTrain[0]
-  
+  print 'y_winTrain_min', np.amin(y_winTrain)
+  print 'y_winTrain_max', np.amax(y_winTrain)
+
   if config.smoothingswitch == 'on':
     x_winTest_smooth, y_winTest_smooth = get_windows_andShift_seq_hourly(dataSetTest_smooth, winL, lookB,yLen,config.y_column)
     x_winTest = x_winTest_smooth
@@ -320,6 +320,7 @@ def make_windowed_data_withSplit(dataframe, config):
     #testMin_y, testMax_y, y_winTest   = minMaxNorm_y(y_winTest  ,yMinValue,yRefValue)
 
     x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm = [],[],[],[]
+
     for i in range(len(trainMax_x)):
       if trainMax_x[i] == 0.:
         trainMax_x[i] = 1.
