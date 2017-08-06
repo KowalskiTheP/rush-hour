@@ -163,6 +163,7 @@ def readINI(filename):
   conf.smoothingswitch=str(conf.smoothingswitch)
   conf.smoothingparam=int(conf.smoothingparam)
   conf.split=str(conf.split)
+  conf.stateful=str(conf.stateful)
   conf.timedistributed=str(conf.timedistributed)
   conf.timeinterval=int(conf.timeinterval)
   conf.traintestsplit=float(conf.traintestsplit)

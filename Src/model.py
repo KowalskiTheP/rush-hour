@@ -61,8 +61,10 @@ def build_model(conf):
   if conf.verbosity < 2:
     print "building model"
 
-
-  inputs=Input(shape=(conf.winlength,conf.inputdim,))
+  if conf.stateful == 'on':
+    inputs=Input(shape=(conf.batchsize,conf.winlength,conf.inputdim), batch_shape=(conf.batchsize,conf.winlength,conf.inputdim))
+  else:
+    inputs=Input(shape=(conf.winlength,conf.inputdim,))
   reg=L1L2(l1=conf.l1, l2=conf.l2)
 
   if conf.cnn == 'on':
@@ -91,6 +93,10 @@ def build_model(conf):
     if conf.verbosity > 2:
       print 'timedistributed off'
     returnSequences=False
+  if conf.stateful == 'on':
+    state=True
+  else:
+    state=False
 
   # first layer is special, gets build by hand
   if isinstance(conf['neuronsperlayer'], list) == True and len(conf.neuronsperlayer) > 1:
@@ -146,7 +152,8 @@ def build_model(conf):
                                        recurrent_activation=conf.recurrentactivation[0],
                                        dropout=conf.dropout[0],
                                        recurrent_dropout=conf.dropout[0],
-                                       bias_regularizer=reg))(temp_input)
+                                       bias_regularizer=reg,
+                                       stateful=state))(temp_input)
       else:
         if conf.verbosity > 2:
           print 'bidirect off'
@@ -156,7 +163,8 @@ def build_model(conf):
                          recurrent_activation=conf.recurrentactivation[0],
                          dropout=conf.dropout[0],
                          recurrent_dropout=conf.dropout[0],
-                         bias_regularizer=reg)(temp_input)
+                         bias_regularizer=reg,
+                         stateful=state)(temp_input)
     if conf.gaussiannoise == 'on':
       if conf.verbosity > 2:
         print 'gaussian noise layer on'
@@ -175,7 +183,8 @@ def build_model(conf):
                                          recurrent_activation=conf.recurrentactivation[i],
                                          dropout=conf.dropout[i],
                                          recurrent_dropout=conf.dropout[i],
-                                         bias_regularizer=reg))(lstm_encode)
+                                         bias_regularizer=reg,
+                                         stateful=state))(lstm_encode)
         else:
           if conf.verbosity > 2:
             print 'bidirect off'
@@ -185,7 +194,8 @@ def build_model(conf):
                            recurrent_activation=conf.recurrentactivation[i],
                            dropout=conf.dropout[i],
                            recurrent_dropout=conf.dropout[i],
-                           bias_regularizer=reg)(lstm_encode)
+                           bias_regularizer=reg,
+                           stateful=state)(lstm_encode)
     if conf.attention == 'on':
       if conf.verbosity > 2:
         print 'attention on'
@@ -210,7 +220,8 @@ def build_model(conf):
                                      recurrent_activation=conf.recurrentactivation[-1],
                                      dropout=conf.dropout[-1],
                                      recurrent_dropout=conf.dropout[-1],
-                                     bias_regularizer=reg))(lstm_encode)
+                                     bias_regularizer=reg,
+                                     stateful=state))(lstm_encode)
     else:
       if conf.verbosity > 2:
         print 'bidirect off'
@@ -220,7 +231,8 @@ def build_model(conf):
                        recurrent_activation=conf.recurrentactivation[-1],
                        dropout=conf.dropout[-1],
                        recurrent_dropout=conf.dropout[-1],
-                       bias_regularizer=reg)(lstm_encode)
+                       bias_regularizer=reg,
+                       stateful=state)(lstm_encode)
 
     if conf.batchnorm == 'on':
       lstm_decode=BatchNormalization()(lstm_decode)
@@ -239,7 +251,8 @@ def build_model(conf):
                                        recurrent_activation=conf.recurrentactivation,
                                        dropout=conf.dropout,
                                        recurrent_dropout=conf.dropout,
-                                       bias_regularizer=reg))(cnn)
+                                       bias_regularizer=reg,
+                                       stateful=state))(cnn)
       else:
         lstm_decode=LSTM(conf.neuronsperlayer,
                          activation=conf.activationperlayer,
@@ -247,7 +260,8 @@ def build_model(conf):
                          recurrent_activation=conf.recurrentactivation,
                          dropout=conf.dropout,
                          recurrent_dropout=conf.dropout,
-                         bias_regularizer=reg)(cnn)
+                         bias_regularizer=reg,
+                         stateful=state)(cnn)
 
     else:
       if conf.verbosity > 2:
@@ -261,7 +275,8 @@ def build_model(conf):
                                        recurrent_activation=conf.recurrentactivation,
                                        dropout=conf.dropout,
                                        recurrent_dropout=conf.dropout,
-                                       bias_regularizer=reg))(inputs)
+                                       bias_regularizer=reg,
+                                       stateful=state))(inputs)
       else:
         if conf.verbosity > 2:
           print 'bidirect off'
@@ -271,7 +286,8 @@ def build_model(conf):
                          recurrent_activation=conf.recurrentactivation,
                          dropout=conf.dropout,
                          recurrent_dropout=conf.dropout,
-                         bias_regularizer=reg)(inputs)
+                         bias_regularizer=reg,
+                         stateful=state)(inputs)
 
     if conf.batchnorm == 'on':
       lstm_decode=BatchNormalization()(lstm_decode)
@@ -296,9 +312,9 @@ def build_model(conf):
                decay=0.0)
   #!!!!!!!!implement working custom loss!!!!!!!!
   if conf.loss == 'stock_loss':
-    model.compile(loss=stock_loss, optimizer=opt)
+    model.compile(loss=stock_loss, optimizer=opt, metrics=['acc'])
   else:
-    model.compile(loss=conf.loss, optimizer=opt)
+    model.compile(loss=conf.loss, optimizer=opt, metrics=['acc'])
 
   #if conf.timedistributed == 'on':
     #model=TimeDistributed(model)
@@ -336,7 +352,7 @@ def plot_data(true_data, pred_data, title='Your data'):
 
 def eval_model(test_x, test_y, trainedModel, config, tableHeader):
   '''calculate some core metrics for model evaluation'''
-  
+
   test_y_shape=test_y.shape
   score=trainedModel.evaluate(test_x, test_y, batch_size=int(config.batchsize))
   pred=predict_point_by_point(trainedModel, test_x)
@@ -344,7 +360,16 @@ def eval_model(test_x, test_y, trainedModel, config, tableHeader):
   np.savetxt(config.predictionfile, np.column_stack((pred, test_y)), delimiter=' ')
 
   return pred
-    
+
+def eval_model_stateful(test_x, test_y, trainedModel, config, tableHeader):
+  '''calculate some core metrics for model evaluation'''
+  pred=np.zeros(len(test_x))
+  for i in range(test_x):
+    x=np.expand_dims(test_x[i], axis=0)
+    pred[i] = trainedModel.predict_on_batch(x)
+  np.savetxt(config.predictionfile, np.column_stack((pred, test_y)), delimiter=' ')
+
+  return pred
 ###############################################
 
 def get_random_hyperparameterset(conf):

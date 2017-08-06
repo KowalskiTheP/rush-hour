@@ -88,8 +88,23 @@ else:
   #Learning rate schedule
   lr_sched=ReduceLROnPlateau(monitor='val_loss', factor=conf.decay, patience=10, verbose=1, mode='auto', epsilon=0.0001, cooldown=0, min_lr=0)
 
-  #fitting stuff
-  model1.fit(x_winTrain, y_winTrain, conf.batchsize, conf.epochs, callbacks=[earlyStopping,checkpoint,lr_sched], validation_split=0.1, shuffle=False)
+  if conf.stateful == 'on':
+    for epoch in range(conf.epochs):
+      mean_training_accuracy = []
+      mean_training_loss = []
+      for i in range(len(x_winTrain)):
+          y = y_winTrain[i]
+          x = np.expand_dims(x_winTrain[i], axis=0)
+          training_loss,training_acc=model1.train_on_batch(x,y)
+          mean_training_accuracy.append(training_acc)
+          mean_training_loss.append(training_loss)
+      model1.reset_states()
+      print('accuracy training = {}'.format(np.mean(mean_training_accuracy)))
+      print('loss training = {}'.format(np.mean(mean_training_loss)))
+      print('___________________________________')
+  else:
+    #fitting stuff
+    model1.fit(x_winTrain, y_winTrain, conf.batchsize, conf.epochs, callbacks=[earlyStopping,checkpoint,lr_sched], validation_split=0.1, shuffle=False)
 
   #save last model
   model.safe_model(model1, conf)
@@ -102,8 +117,12 @@ else:
   #y_winTrain = y_winTrain.flatten()
 
   if conf.evalmetrics == 'on':
-    predTest = model.eval_model(x_winTest, y_winTest, loaded_model, conf, 'test data')
-    predTrain = model.eval_model(x_winTrain, y_winTrain, loaded_model, conf, 'train data')
+    if conf.stateful == 'on':
+      predTest = model.eval_model_stateful(x_winTest, y_winTest, loaded_model, conf, 'test data')
+      predTrain = model.eval_model_stateful(x_winTrain, y_winTrain, loaded_model, conf, 'train data')
+    else:
+      predTest = model.eval_model(x_winTest, y_winTest, loaded_model, conf, 'test data')
+      predTrain = model.eval_model(x_winTrain, y_winTrain, loaded_model, conf, 'train data')
   else:
     predTest = model.predict_point_by_point(loaded_model, x_winTest)
     predTrain = model.predict_point_by_point(loaded_model, x_winTrain)
