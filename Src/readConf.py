@@ -171,6 +171,9 @@ def readINI(filename):
   conf.verbosity=str(conf.verbosity)
   conf.winlength=int(conf.winlength)
   #conf.y_column=int(conf.y_column)
+  conf.intervall=int(conf.intervall)
+  conf.anticorrelation=str(conf.anticorrelation)
+  conf.overlap=int(conf.overlap)
   
   pp=pprint.PrettyPrinter(indent=2)
   pp.pprint(unbunchify(conf))

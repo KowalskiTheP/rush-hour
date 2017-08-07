@@ -181,6 +181,16 @@ def minMaxNorm_y(y_data,minValue,maxValue):
 
 #==============================================================================
 
+def diffOnY(y_data, intervall):
+  y_data_new = y_data.copy()
+  for i in range(intervall,len(y_data)):
+    y_data_new[i] = y_data[i] - y_data[i-intervall]
+  y_data_new[0:intervall] = 0.
+  return y_data_new
+
+#============================================================================== !!!! 
+
+
 def make_windowed_data_withSplit(dataframe, config):
   yNorm=False
   refValue = float(config.refvalue)
@@ -189,8 +199,15 @@ def make_windowed_data_withSplit(dataframe, config):
   xDim = len(config.columns)
   yLen = int(config.outputlength)
   dataSet_Full_x, dataSet_Full_y = getDataSet_noSplit(dataframe, config.columns, config.y_column)
+  print 'dataSet_Full_y (old):\n', dataSet_Full_y
+  print dataSet_Full_y.shape
+  dataSet_Full_y = diffOnY(dataSet_Full_y, config.intervall)
+  print 'dataSet_Full_y (new):\n', dataSet_Full_y
+  print 'ENDE'
   yRefValue=np.mean(dataSet_Full_y)
   yMinValue=np.amin(dataSet_Full_y)
+  
+  # This works only if there is just the minute column in the data and it must be on position 0.
   maxTime = np.amax(dataSet_Full_x[:,0])
   dataSet_Full_x[:,0] = dataSet_Full_x[:,0] / maxTime
   
@@ -245,12 +262,13 @@ def make_windowed_data_withSplit(dataframe, config):
 
   tmp_x_winTrain = []
   tmp_y_winTrain = []
-  for antiCorr in range(len(x_winTrain)):
-    if antiCorr % winL == 0 or antiCorr % round(winL/2) == 0:
-      tmp_x_winTrain.append(x_winTrain[antiCorr])
-      tmp_y_winTrain.append(y_winTrain[antiCorr])
-  x_winTrain = np.array(tmp_x_winTrain)
-  y_winTrain = np.array(tmp_y_winTrain)
+  if config.anticorrelation == 'on':
+    for antiCorr in range(len(x_winTrain)):
+      if antiCorr % config.overlap == 0:
+        tmp_x_winTrain.append(x_winTrain[antiCorr])
+        tmp_y_winTrain.append(y_winTrain[antiCorr])
+    x_winTrain = np.array(tmp_x_winTrain)
+    y_winTrain = np.array(tmp_y_winTrain)
 
   print 'x_winTrain',x_winTrain[0]
   print 'y_winTrain',y_winTrain[0]
