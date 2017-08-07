@@ -174,6 +174,7 @@ def readINI(filename):
   conf.intervall=int(conf.intervall)
   conf.anticorrelation=str(conf.anticorrelation)
   conf.overlap=int(conf.overlap)
+  conf.ydiffs=str(conf.ydiffs)
   
   pp=pprint.PrettyPrinter(indent=2)
   pp.pprint(unbunchify(conf))

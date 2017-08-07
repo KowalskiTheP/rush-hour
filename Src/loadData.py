@@ -184,7 +184,7 @@ def minMaxNorm_y(y_data,minValue,maxValue):
 def diffOnY(y_data, intervall):
   y_data_new = y_data.copy()
   for i in range(intervall,len(y_data)):
-    y_data_new[i] = y_data[i] - y_data[i-intervall]
+    y_data_new[i] = (y_data[i] - y_data[i-intervall])
   y_data_new[0:intervall] = 0.
   return y_data_new
 
@@ -198,14 +198,23 @@ def make_windowed_data_withSplit(dataframe, config):
   lookB = int(config.look_back)
   xDim = len(config.columns)
   yLen = int(config.outputlength)
-  dataSet_Full_x, dataSet_Full_y = getDataSet_noSplit(dataframe, config.columns, config.y_column)
-  print 'dataSet_Full_y (old):\n', dataSet_Full_y
-  print dataSet_Full_y.shape
-  dataSet_Full_y = diffOnY(dataSet_Full_y, config.intervall)
-  print 'dataSet_Full_y (new):\n', dataSet_Full_y
-  print 'ENDE'
-  yRefValue=np.mean(dataSet_Full_y)
-  yMinValue=np.amin(dataSet_Full_y)
+  
+  if config.ydiffs=='on':
+    dataSet_Full_x, dataSet_Full_y_pre = getDataSet_noSplit(dataframe, config.columns, config.y_column)
+    print 'dataSet_Full_y_pre (old):\n', dataSet_Full_y_pre
+    print dataSet_Full_y_pre.shape
+    dataSet_Full_y = diffOnY(dataSet_Full_y_pre, config.intervall)
+    print 'dataSet_Full_y (new):\n', dataSet_Full_y
+    print dataSet_Full_y.shape
+    print 'ENDE'
+  else:
+    dataSet_Full_x, dataSet_Full_y = getDataSet_noSplit(dataframe, config.columns, config.y_column)
+  
+  if config.ydiffs!='on':
+    yRefValue=np.mean(dataSet_Full_y)
+    yMinValue=np.amin(dataSet_Full_y)
+    print 'yRefValue: ', yRefValue
+    print 'yMinValue: ', yMinValue  
   
   # This works only if there is just the minute column in the data and it must be on position 0.
   maxTime = np.amax(dataSet_Full_x[:,0])
@@ -218,9 +227,7 @@ def make_windowed_data_withSplit(dataframe, config):
     div = np.amin(dataSet_Full_x[:,j])
     dataSet_Full_x[:,j] = dataSet_Full_x[:,j] - div
     print np.mean(dataSet_Full_x[:,j])
-  
-  print 'yRefValue: ', yRefValue
-  print 'yMinValue: ', yMinValue
+
   #dataSet_Full_tmp = dataSet_Full.copy()
 
   #dataSetTrain, dataSetTest = split_data(dataSet_Full, float(config.traintestsplit))
@@ -248,10 +255,11 @@ def make_windowed_data_withSplit(dataframe, config):
 #=========================================================================================
 
   dataSetTrain_x, dataSetTest_x = split_data(dataSet_Full_x, config.traintestsplit)
-
   dataSetTrain_y, dataSetTest_y = split_data(dataSet_Full_y, config.traintestsplit)
-  dataSetTrain_y = dataSetTrain_y - yMinValue
-  dataSetTest_y  = dataSetTest_y  - yMinValue
+  
+  if config.ydiffs!='on':
+    dataSetTrain_y = dataSetTrain_y - yMinValue
+    dataSetTest_y  = dataSetTest_y  - yMinValue
 
   if config.smoothingswitch == 'on':
     dataSetTrain = smoothing(dataSetTrain, config)
@@ -323,11 +331,13 @@ def make_windowed_data_withSplit(dataframe, config):
     x_winTrain_norm, y_winTrain_norm, x_winTest_norm, y_winTest_norm,trainRef,testRef = [],[],[],[],[],[]
     for i in range(len(y_winTrain)):
       x_winTrain_norm.append(normalise_data_refValue(config.refvalue,x_winTrain[i]))
-      y_winTrain_norm.append(normalise_data_refValue(config.refvalue,y_winTrain[i]))
+      if config.ydiffs!='on':
+        y_winTrain_norm.append(normalise_data_refValue(config.refvalue,y_winTrain[i]))
       trainRef.append(config.refvalue)
     for i in range(len(y_winTest)):
       x_winTest_norm.append( normalise_data_refValue(config.refvalue,x_winTest[i]))
-      y_winTest_norm.append( normalise_data_refValue(config.refvalue,y_winTest[i]))
+      if config.ydiffs!='on':
+        y_winTest_norm.append( normalise_data_refValue(config.refvalue,y_winTest[i]))
       testRef.append(config.refvalue)
 
   if config.normalise == 4:
@@ -351,12 +361,29 @@ def make_windowed_data_withSplit(dataframe, config):
     #testMax_y.fill(yRefValue)
     for i in range(len(x_winTrain)):
       x_winTrain_norm.append( normalise_data_refValue(trainMax_x[i], x_winTrain[i]) )
-      y_winTrain_norm.append( normalise_data_refValue(trainMax_x[i], y_winTrain[i]) )
+      if config.ydiffs!='on':
+        y_winTrain_norm.append( normalise_data_refValue(trainMax_x[i], y_winTrain[i]) )
+      else:
+        y_winTrain_norm = y_winTrain.copy()
 
     for j in range(len(x_winTest)):
       x_winTest_norm.append(  normalise_data_refValue(testMax_x[j] , x_winTest[j])  )
-      y_winTest_norm.append(  normalise_data_refValue(testMax_x[j] , y_winTest[j])  )
+      if config.ydiffs!='on':
+        y_winTest_norm.append(  normalise_data_refValue(testMax_x[j] , y_winTest[j])  )
+      else:
+        y_winTest_norm = y_winTest.copy()
+    
+    print y_winTrain_norm.shape
+    for i in range(len(y_winTrain_norm)):
+      if y_winTrain_norm[i]>35. or y_winTrain_norm[i]<-35.:
+        y_winTrain_norm[i]=0.
+    
+    for i in range(len(y_winTest_norm)):
+      if y_winTest_norm[i]>35. or y_winTest_norm[i]<-35.:
+        y_winTest_norm[i]=0.
 
+        
+    print 'np.amax()',np.amax(y_winTrain_norm)
 
   if config.normalise != 0:
     x_winTrain_norm = np.reshape(np.array(x_winTrain_norm),(len(x_winTrain_norm),winL,xDim ))

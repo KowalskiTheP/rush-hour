@@ -105,6 +105,9 @@ else:
       print('___________________________________')
   else:
     #fitting stuff
+    plt.plot(y_winTrain)
+    plt.show()
+
     model1.fit(x_winTrain, y_winTrain, conf.batchsize, conf.epochs, callbacks=[earlyStopping,checkpoint,lr_sched], validation_split=0.1, shuffle=False)
 
 
@@ -141,13 +144,15 @@ else:
       y_winTrain[i] = trainRef[i] * y_winTrain[i]
       predTrain[i]  = trainRef[i] * predTrain[i]
   
-  if conf.normalise == 4:
-    for i in range(len(testMax_x)):
-      predTest[i]   = testMax_x[i]  * predTest[i] #  + testMin_x[i]
-      y_winTest[i]  = testMax_x[i]  * y_winTest[i]#  + testMin_x[i]
-    for i in range(len(trainMax_x)):
-      y_winTrain[i] = trainMax_x[i] * y_winTrain[i]# + trainMin_x[i]
-      predTrain[i]  = trainMax_x[i] * predTrain[i] # + trainMin_x[i]
+  print 'predTrain:\n',predTrain
+  if conf.ydiffs!='on':
+    if conf.normalise == 4:
+      for i in range(len(testMax_x)):
+        predTest[i]   = testMax_x[i]  * predTest[i] #  + testMin_x[i]
+        y_winTest[i]  = testMax_x[i]  * y_winTest[i]#  + testMin_x[i]
+      for i in range(len(trainMax_x)):
+        y_winTrain[i] = trainMax_x[i] * y_winTrain[i]# + trainMin_x[i]
+        predTrain[i]  = trainMax_x[i] * predTrain[i] # + trainMin_x[i]
 
 
 winL = int(conf.winlength)
